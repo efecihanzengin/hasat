@@ -154,6 +154,46 @@ describe("extractPlaylistMetadata", () => {
     expect(result?.title).toBe("Microformat Title");
   });
 
+  it("extracts initial videos from playlistVideoRenderer nodes in payload", () => {
+    const mockPayload = {
+      header: {
+        playlistHeaderRenderer: {
+          playlistId: "PL_VIDEOS_123",
+          title: { simpleText: "Initial Videos Playlist" },
+        },
+      },
+      contents: {
+        playlistVideoListRenderer: {
+          contents: [
+            {
+              playlistVideoRenderer: {
+                videoId: "vid_001",
+                title: { runs: [{ text: "First Video" }] },
+              },
+            },
+            {
+              playlistVideoRenderer: {
+                videoId: "vid_002",
+                title: { runs: [{ text: "Second Video" }] },
+              },
+            },
+          ],
+        },
+      },
+    };
+
+    const result = extractPlaylistMetadata(mockPayload);
+    expect(result?.initialVideos).toHaveLength(2);
+    expect(result?.initialVideos?.[0]).toEqual({
+      videoId: "vid_001",
+      title: "First Video",
+    });
+    expect(result?.initialVideos?.[1]).toEqual({
+      videoId: "vid_002",
+      title: "Second Video",
+    });
+  });
+
   it("returns null for invalid payload", () => {
     expect(extractPlaylistMetadata(null)).toBeNull();
     expect(extractPlaylistMetadata({})).toBeNull();

@@ -139,6 +139,19 @@ export async function collectVideos(
   const browseId = context?.videosTab?.browseId;
   const params = context?.videosTab?.params;
 
+  // Pre-seed with initial videos already present in context (e.g. playlist browse response)
+  const initialBatch =
+    context?.playlist?.initialVideos ?? context?.initialVideos;
+  if (initialBatch && initialBatch.length > 0) {
+    for (const item of initialBatch) {
+      if (!seenIds.has(item.videoId)) {
+        seenIds.add(item.videoId);
+        allVideos.push(item);
+      }
+    }
+    onProgress?.(allVideos.length);
+  }
+
   try {
     if (initialContinuationToken) {
       const generator = enumerateVideos({

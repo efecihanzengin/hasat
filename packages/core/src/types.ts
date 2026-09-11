@@ -200,6 +200,7 @@ export type PlaylistMetadata = {
   videoCount?: number;
   author?: string;
   continuationToken?: string;
+  initialVideos?: VideoItem[];
 };
 
 export type ChannelMetadata = {
@@ -217,4 +218,5 @@ export type YouTubeContext = {
   videosTab?: VideosTabInfo;
   playlist?: PlaylistMetadata;
   channel?: ChannelMetadata;
+  initialVideos?: VideoItem[];
 };

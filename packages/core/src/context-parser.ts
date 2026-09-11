@@ -6,6 +6,7 @@ import type {
 import {
   extractContinuationToken,
   extractTextFromTitle,
+  extractVideosFromBrowse,
 } from "./video-enumerator.js";
 
 function isRecord(val: unknown): val is Record<string, unknown> {
@@ -233,8 +234,9 @@ export function extractPlaylistMetadata(
     }
   }
 
-  // 2. Check for continuation token
+  // 2. Check for continuation token & initial videos
   const continuationToken = extractContinuationToken(payload, { maxDepth });
+  const initialVideos = extractVideosFromBrowse(payload, { maxDepth });
 
   if (playlistId) {
     return {
@@ -243,6 +245,7 @@ export function extractPlaylistMetadata(
       videoCount,
       author,
       continuationToken,
+      initialVideos: initialVideos.length > 0 ? initialVideos : undefined,
     };
   }
 
