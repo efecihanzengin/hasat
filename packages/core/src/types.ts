@@ -89,3 +89,17 @@ export function createJobItem(videoId: string, title: string): JobItem {
     status: "pending",
   };
 }
+
+export type ExportFormat =
+  | "txt"
+  | "json"
+  | "csv"
+  | "srt"
+  | "vtt"
+  | "markdown";
+
+export type TxtFormatOptions = {
+  includeTimestamps?: boolean;
+};
+
+export type FormatOptions = TxtFormatOptions;
