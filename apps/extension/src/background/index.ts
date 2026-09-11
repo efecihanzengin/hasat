@@ -19,6 +19,7 @@ export * from "./job-manager.js";
 
 const storage = new ChromeJobStorage();
 export const jobManager = new JobManager({ storage });
+(globalThis as unknown as { jobManager: JobManager }).jobManager = jobManager;
 
 export function createMessageRouter(manager: JobManager) {
   return (

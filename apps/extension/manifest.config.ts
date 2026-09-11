@@ -8,7 +8,7 @@ export const manifestConfig = {
     "Bulk extract transcripts from YouTube channels and playlists as TXT, JSON, CSV, SRT, VTT, or Markdown.",
   action: {},
   permissions: ["storage"],
-  host_permissions: ["https://www.youtube.com/*"],
+  host_permissions: ["https://www.youtube.com/*", "https://*.googlevideo.com/*"],
   background: {
     service_worker: "src/background/index.ts",
     type: "module" as const,

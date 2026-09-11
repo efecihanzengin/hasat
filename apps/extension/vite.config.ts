@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import { crx } from "@crxjs/vite-plugin";
 import manifest from "./manifest.config.js";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     crx({
@@ -16,9 +16,13 @@ export default defineConfig({
       },
     }),
   ],
+  define: {
+    "process.env.NODE_ENV": JSON.stringify(mode),
+    "process.env": {},
+  },
   build: {
     emptyOutDir: true,
     outDir: "dist",
   },
-});
+}));
 
