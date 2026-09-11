@@ -43,11 +43,15 @@ export function initIsolatedBridge(
     }
   };
 
-  win.addEventListener("message", onMessage);
+  if (typeof win?.addEventListener === "function") {
+    win.addEventListener("message", onMessage);
+  }
 
   return () => {
     isBridgeInitialized = false;
-    win.removeEventListener("message", onMessage);
+    if (typeof win?.removeEventListener === "function") {
+      win.removeEventListener("message", onMessage);
+    }
   };
 }
 

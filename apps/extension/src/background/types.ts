@@ -31,6 +31,7 @@ export type JobState = {
   channelOrPlaylist?: string;
   preferredLanguage?: string;
   format?: ExportFormat;
+  formats?: ExportFormat[];
   formatOptions?: FormatOptions;
   createdAt: number;
   completedAt?: number;
@@ -43,6 +44,7 @@ export type StartJobPayload = {
   context?: YouTubeContext;
   preferredLanguage?: string;
   format?: ExportFormat;
+  formats?: ExportFormat[];
   formatOptions?: FormatOptions;
   channelOrPlaylist?: string;
   concurrency?: number;
@@ -74,6 +76,7 @@ export type GetJobStatusMessage = {
 export type DownloadExportPayload = {
   jobId?: string;
   format?: ExportFormat;
+  formats?: ExportFormat[];
   formatOptions?: FormatOptions;
   channelOrPlaylist?: string;
 };

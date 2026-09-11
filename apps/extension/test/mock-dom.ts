@@ -237,6 +237,7 @@ export class MockDocument extends MockNode {
   body: MockElement;
   documentElement: MockElement;
   defaultView: MockWindow | null = null;
+  title: string = "";
 
   constructor() {
     super();
@@ -358,6 +359,26 @@ function matchesSimple(el: MockElement, selector: string): boolean {
   }
   if (trimmed.startsWith(".")) {
     return el.classList.contains(trimmed.slice(1));
+  }
+  const attrMatch = trimmed.match(
+    /^([a-zA-Z0-9_-]*)\[([a-zA-Z0-9_-]+)([*^$]?=)"?([^"\]]*)"?\]$/
+  );
+  if (attrMatch) {
+    const tag = attrMatch[1];
+    const attrName = attrMatch[2];
+    const op = attrMatch[3];
+    const expectedVal = attrMatch[4];
+    if (tag && el.tagName.toLowerCase() !== tag.toLowerCase()) {
+      return false;
+    }
+    if (!attrName) return false;
+    const actualVal = el.getAttribute(attrName);
+    if (actualVal === null || actualVal === undefined) return false;
+    if (op === "=") return actualVal === expectedVal;
+    if (op === "*=") return actualVal.includes(expectedVal ?? "");
+    if (op === "^=") return actualVal.startsWith(expectedVal ?? "");
+    if (op === "$=") return actualVal.endsWith(expectedVal ?? "");
+    return true;
   }
   return el.tagName.toLowerCase() === trimmed.toLowerCase();
 }

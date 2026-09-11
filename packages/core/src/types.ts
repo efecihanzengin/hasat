@@ -142,7 +142,8 @@ export type BuildTranscriptArchiveParams = {
   getTranscript: (
     videoId: string
   ) => Promise<Transcript | null | undefined> | Transcript | null | undefined;
-  format: ExportFormat;
+  format?: ExportFormat;
+  formats?: ExportFormat[];
   formatOptions?: FormatOptions;
   channelOrPlaylist?: string;
   includeManifest?: boolean;
@@ -201,6 +202,13 @@ export type PlaylistMetadata = {
   continuationToken?: string;
 };
 
+export type ChannelMetadata = {
+  title?: string;
+  handle?: string;
+  videoCount?: number;
+  channelId?: string;
+};
+
 export type YouTubeContext = {
   apiKey?: string;
   clientVersion?: string;
@@ -208,4 +216,5 @@ export type YouTubeContext = {
   visitorData?: string;
   videosTab?: VideosTabInfo;
   playlist?: PlaylistMetadata;
+  channel?: ChannelMetadata;
 };

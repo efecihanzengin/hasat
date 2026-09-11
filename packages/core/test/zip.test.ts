@@ -228,6 +228,33 @@ describe("zip packaging module", () => {
       expect(Object.keys(unzipped)).toEqual(["1-No-Manifest-v1.srt"]);
     });
 
+    it("packages multiple export formats when formats array is provided", async () => {
+      const items: JobItem[] = [
+        {
+          videoId: "m1",
+          title: "Multi Format Test",
+          status: "done",
+        },
+      ];
+
+      const result = await buildTranscriptArchive({
+        items,
+        getTranscript: () =>
+          createMockTranscript("m1", "Multi Format Test"),
+        formats: ["txt", "markdown", "json"],
+      });
+
+      const unzipped = unzipSync(result.zipData);
+      const fileNames = Object.keys(unzipped).sort();
+
+      expect(fileNames).toEqual([
+        "1-Multi-Format-Test-m1.json",
+        "1-Multi-Format-Test-m1.md",
+        "1-Multi-Format-Test-m1.txt",
+        "manifest.json",
+      ]);
+    });
+
     it("handles empty items list", async () => {
       const result = await buildTranscriptArchive({
         items: [],

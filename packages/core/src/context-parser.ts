@@ -1,4 +1,8 @@
-import type { PlaylistMetadata, VideosTabInfo } from "./types.js";
+import type {
+  ChannelMetadata,
+  PlaylistMetadata,
+  VideosTabInfo,
+} from "./types.js";
 import {
   extractContinuationToken,
   extractTextFromTitle,
@@ -239,6 +243,117 @@ export function extractPlaylistMetadata(
       videoCount,
       author,
       continuationToken,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Defensively extracts channel metadata from a YouTube channel browse response or header.
+ * Handles pageHeaderRenderer (modern), c4TabbedHeaderRenderer, and channelHeaderRenderer (legacy).
+ */
+export function extractChannelMetadata(
+  payload: unknown,
+  options?: { maxDepth?: number }
+): ChannelMetadata | null {
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  const maxDepth = options?.maxDepth ?? 25;
+  let title: string | undefined;
+  let handle: string | undefined;
+  let videoCount: number | undefined;
+  let channelId: string | undefined;
+
+  const headerNodes = findNodesWithKeys(
+    payload,
+    (k) =>
+      k === "pageHeaderRenderer" ||
+      k === "c4TabbedHeaderRenderer" ||
+      k === "channelHeaderRenderer" ||
+      k === "channelMetadataRenderer",
+    maxDepth
+  );
+
+  for (const { key, val } of headerNodes) {
+    if (key === "pageHeaderRenderer") {
+      if (typeof val.pageTitle === "string" && !title) {
+        title = val.pageTitle;
+      }
+      if (isRecord(val.content) && isRecord(val.content.pageHeaderViewModel)) {
+        const vm = val.content.pageHeaderViewModel;
+        if (!title && isRecord(vm.title)) {
+          const t = extractTextFromTitle(vm.title);
+          if (t) title = t;
+        }
+        if (
+          isRecord(vm.metadata) &&
+          isRecord(vm.metadata.contentMetadataViewModel)
+        ) {
+          const rows = vm.metadata.contentMetadataViewModel.metadataRows;
+          if (Array.isArray(rows)) {
+            for (const row of rows) {
+              if (!isRecord(row) || !Array.isArray(row.metadataParts)) continue;
+              for (const part of row.metadataParts) {
+                if (!isRecord(part)) continue;
+                const text = extractTextFromTitle(part.text ?? part);
+                if (!handle && text.startsWith("@")) {
+                  handle = text;
+                } else if (videoCount === undefined && /video/i.test(text)) {
+                  const match = text.replace(/,/g, "").match(/\d+/);
+                  if (match) {
+                    videoCount = parseInt(match[0], 10);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } else if (
+      key === "c4TabbedHeaderRenderer" ||
+      key === "channelHeaderRenderer"
+    ) {
+      if (!title && val.title) {
+        const t = extractTextFromTitle(val.title);
+        if (t) title = t;
+      }
+      if (!channelId && typeof val.channelId === "string") {
+        channelId = val.channelId;
+      }
+      if (videoCount === undefined) {
+        const countText = extractTextFromTitle(
+          val.videosCountText ?? val.videoCountText
+        );
+        const match = countText.replace(/,/g, "").match(/\d+/);
+        if (match) {
+          videoCount = parseInt(match[0], 10);
+        }
+      }
+    } else if (key === "channelMetadataRenderer") {
+      if (!title && typeof val.title === "string") {
+        title = val.title;
+      }
+      if (!channelId && typeof val.externalId === "string") {
+        channelId = val.externalId;
+      }
+      if (!handle && typeof val.vanityChannelUrl === "string") {
+        const match = val.vanityChannelUrl.match(/@([^/?#]+)/);
+        if (match) {
+          handle = `@${match[1]}`;
+        }
+      }
+    }
+  }
+
+  if (title || handle || videoCount !== undefined || channelId) {
+    return {
+      title,
+      handle,
+      videoCount,
+      channelId,
     };
   }
 

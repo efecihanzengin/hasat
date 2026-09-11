@@ -1,5 +1,6 @@
 import type { YouTubeContext } from "@youtube-transcript/core";
 import {
+  extractChannelMetadata,
   extractCredentialsFromHtml,
   extractPlaylistMetadata,
   extractTrackingCredentials,
@@ -94,6 +95,9 @@ export function extractYouTubeContextFromWindow(
   const playlist = win.ytInitialData
     ? extractPlaylistMetadata(win.ytInitialData)
     : null;
+  const channel = win.ytInitialData
+    ? extractChannelMetadata(win.ytInitialData)
+    : null;
 
   return {
     apiKey,
@@ -102,6 +106,7 @@ export function extractYouTubeContextFromWindow(
     visitorData,
     videosTab: videosTab ?? undefined,
     playlist: playlist ?? undefined,
+    channel: channel ?? undefined,
   };
 }
 

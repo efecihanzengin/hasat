@@ -4,6 +4,7 @@ import playlistFixture from "../fixtures/browse-playlist-page.json";
 import {
   extractVideosTab,
   extractPlaylistMetadata,
+  extractChannelMetadata,
   parseYtcfgCredentials,
   extractTrackingCredentials,
   extractCredentialsFromHtml,
@@ -237,5 +238,39 @@ describe("extractCredentialsFromHtml", () => {
       apiKey: undefined,
       clientVersion: undefined,
     });
+  });
+});
+
+describe("extractChannelMetadata", () => {
+  it("extracts channel title, handle, and video count from real channel fixture", () => {
+    const channel = extractChannelMetadata(channelFixture);
+    expect(channel).not.toBeNull();
+    expect(channel?.title).toBe("Veritasium");
+    expect(channel?.handle).toBe("@veritasium");
+    expect(channel?.videoCount).toBe(533);
+  });
+
+  it("extracts channel metadata from legacy header structure", () => {
+    const legacyPayload = {
+      header: {
+        c4TabbedHeaderRenderer: {
+          channelId: "UC12345",
+          title: "Legacy Creator",
+          videosCountText: {
+            runs: [{ text: "120 videos" }],
+          },
+        },
+      },
+    };
+    const channel = extractChannelMetadata(legacyPayload);
+    expect(channel).not.toBeNull();
+    expect(channel?.title).toBe("Legacy Creator");
+    expect(channel?.channelId).toBe("UC12345");
+    expect(channel?.videoCount).toBe(120);
+  });
+
+  it("handles non-record and empty payloads gracefully", () => {
+    expect(extractChannelMetadata(null)).toBeNull();
+    expect(extractChannelMetadata({})).toBeNull();
   });
 });

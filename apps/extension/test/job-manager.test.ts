@@ -242,6 +242,42 @@ describe("JobManager", () => {
     }
   });
 
+  it("exports multiple formats in zip archive when formats array is specified", async () => {
+    setupSuccessfulFetch();
+
+    const manager = new JobManager({
+      storage,
+      fetchFn: mockFetch,
+      delayFn: async () => {},
+      getJitterDelay: () => 0,
+    });
+
+    await manager.startJob({
+      videos: [{ videoId: "v1", title: "Video One" }],
+      formats: ["txt", "markdown", "json"],
+      channelOrPlaylist: "My Channel",
+    });
+
+    await new Promise((r) => setTimeout(r, 60));
+
+    const exportData = await manager.downloadExport({
+      formats: ["txt", "markdown", "json"],
+    });
+
+    const binary = atob(exportData.dataBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const unzipped = unzipSync(bytes);
+    const filenames = Object.keys(unzipped).sort();
+
+    expect(filenames).toContain("manifest.json");
+    expect(filenames.some((f) => f.endsWith(".txt"))).toBe(true);
+    expect(filenames.some((f) => f.endsWith(".md"))).toBe(true);
+    expect(filenames.some((f) => f.endsWith(".json"))).toBe(true);
+  });
+
   it("manages Liveness Port connection and broadcasts events", async () => {
     const manager = new JobManager({ storage });
     const events: JobPortEvent[] = [];

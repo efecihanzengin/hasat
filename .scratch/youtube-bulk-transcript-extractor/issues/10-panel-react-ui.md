@@ -5,15 +5,15 @@ The interactive slide-out drawer UI mounted inside the Shadow DOM container, imp
 
 **Blocked by:** 08 (Service Worker Job Queue, Liveness Port & Chunked Storage), 09 (SPA-Safe Button Injection & Shadow DOM Shell)
 
-**Status:** ready-for-agent
+**Status:** completed
 
 ## Acceptance Criteria
 
-- [ ] React root mounted into the isolated Shadow DOM root with encapsulated styling.
-- [ ] Source header displaying detected channel/playlist title and estimated video count.
-- [ ] Configuration controls: checkboxes for all 6 formats, timestamp toggle for TXT, and language selector (popular languages + "Auto / Video Default").
-- [ ] "Start" button initiating the job and establishing the `Liveness Port` with the Service Worker.
-- [ ] Active job view: live progress counter (`{done}/{total}`), visual progress bar, and scrollable list showing per-video status and error badges.
-- [ ] "Cancel" button triggering `AbortController` cancellation in the Service Worker while keeping completed items downloadable.
-- [ ] Completion summary banner (`N exported, M skipped, K failed`) and "Download (.zip)" button.
-- [ ] Panel state synchronizes with Service Worker so closing/reopening the drawer does not disrupt active job monitoring.
+- [x] React root mounted into the isolated Shadow DOM root with encapsulated styling.
+- [x] Source header displaying detected channel/playlist title and estimated video count.
+- [x] Configuration controls: checkboxes for all 6 formats, timestamp toggle for TXT, and language selector (popular languages + "Auto / Video Default").
+- [x] "Start" button initiating the job and establishing the `Liveness Port` with the Service Worker.
+- [x] Active job view: live progress counter (`{done}/{total}`), visual progress bar, and scrollable list showing per-video status and error badges.
+- [x] "Cancel" button triggering `AbortController` cancellation in the Service Worker while keeping completed items downloadable.
+- [x] Completion summary banner (`N exported, M skipped, K failed`) and "Download (.zip)" button.
+- [x] Panel state synchronizes with Service Worker so closing/reopening the drawer does not disrupt active job monitoring.

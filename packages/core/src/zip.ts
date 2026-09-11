@@ -130,10 +130,18 @@ export async function buildTranscriptArchive(
     items,
     getTranscript,
     format,
+    formats,
     formatOptions,
     channelOrPlaylist,
     includeManifest = true,
   } = params;
+
+  const targetFormats =
+    formats && formats.length > 0
+      ? formats
+      : format
+        ? [format]
+        : (["txt"] as const);
 
   const archive = new ZipArchive();
   const filenamesMap = new Map<string, string>();
@@ -145,27 +153,38 @@ export async function buildTranscriptArchive(
     if (item.status === "done") {
       const transcript = await getTranscript(item.videoId);
       if (transcript) {
-        const filename = formatArchiveFileName({
-          index: itemIndex,
-          title: item.title,
-          videoId: item.videoId,
-          format,
-        });
+        for (const fmt of targetFormats) {
+          const filename = formatArchiveFileName({
+            index: itemIndex,
+            title: item.title,
+            videoId: item.videoId,
+            format: fmt,
+          });
 
-        const formattedContent = formatTranscript(
-          transcript,
-          format,
-          formatOptions
-        );
+          const formattedContent = formatTranscript(
+            transcript,
+            fmt,
+            formatOptions
+          );
 
-        archive.addFile(filename, formattedContent);
-        filenamesMap.set(item.videoId, filename);
+          archive.addFile(filename, formattedContent);
+
+          if (targetFormats.length === 1) {
+            filenamesMap.set(item.videoId, filename);
+          } else {
+            const existing = filenamesMap.get(item.videoId);
+            filenamesMap.set(
+              item.videoId,
+              existing ? `${existing}, ${filename}` : filename
+            );
+          }
+        }
       }
     }
   }
 
   const manifest: ExportManifest = createManifest(items, {
-    format,
+    format: targetFormats.length === 1 ? targetFormats[0] : undefined,
     channelOrPlaylist,
     filenames: filenamesMap,
   });

@@ -167,6 +167,7 @@ export class JobManager {
       channelOrPlaylist: payload.channelOrPlaylist,
       preferredLanguage: payload.preferredLanguage,
       format: payload.format,
+      formats: payload.formats,
       formatOptions: payload.formatOptions,
       createdAt: Date.now(),
     };
@@ -373,8 +374,10 @@ export class JobManager {
       );
     }
 
-    const format: ExportFormat =
-      payload?.format ?? job.format ?? "txt";
+    const format: ExportFormat | undefined =
+      payload?.format ?? job.format;
+    const formats: ExportFormat[] | undefined =
+      payload?.formats ?? job.formats;
     const formatOptions: FormatOptions | undefined =
       payload?.formatOptions ?? job.formatOptions;
     const channelOrPlaylist =
@@ -388,6 +391,7 @@ export class JobManager {
         return this.storage.getTranscript(job.id, videoId);
       },
       format,
+      formats,
       formatOptions,
       channelOrPlaylist,
       includeManifest: true,
