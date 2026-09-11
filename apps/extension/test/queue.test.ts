@@ -9,7 +9,7 @@ import {
 
 describe("queue", () => {
   describe("getRandomJitterDelay", () => {
-    it("returns values within 250ms and 500ms range", () => {
+    it("returns values within 1000ms and 2000ms range", () => {
       for (let i = 0; i < 50; i++) {
         const delay = getRandomJitterDelay();
         expect(delay).toBeGreaterThanOrEqual(MIN_JITTER_MS);
@@ -19,7 +19,34 @@ describe("queue", () => {
   });
 
   describe("processQueue", () => {
-    it("throttles execution to max concurrency limit (default 3)", async () => {
+    it("throttles execution to default concurrency 1 when unspecified", async () => {
+      let activeWorkers = 0;
+      let maxActiveWorkers = 0;
+      const items = [1, 2, 3, 4];
+
+      const processed = await processQueue(
+        items,
+        async () => {
+          activeWorkers += 1;
+          if (activeWorkers > maxActiveWorkers) {
+            maxActiveWorkers = activeWorkers;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          activeWorkers -= 1;
+          return true;
+        },
+        {
+          getJitterDelay: () => 0,
+        }
+      );
+
+      expect(maxActiveWorkers).toBe(1);
+      expect(processed.total).toBe(4);
+      expect(processed.processed).toBe(4);
+      expect(processed.aborted).toBe(false);
+    });
+
+    it("throttles execution to specified concurrency limit", async () => {
       let activeWorkers = 0;
       let maxActiveWorkers = 0;
       const items = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -79,15 +106,11 @@ describe("queue", () => {
       });
 
       const items = [1, 2, 3, 4];
-      await processQueue(
-        items,
-        async (item) => item * 2,
-        {
-          concurrency: 1, // Single worker makes jitter delay invocations deterministic
-          getJitterDelay: () => 300,
-          delayFn: mockDelay,
-        }
-      );
+      await processQueue(items, async (item) => item * 2, {
+        concurrency: 1, // Single worker makes jitter delay invocations deterministic
+        getJitterDelay: () => 300,
+        delayFn: mockDelay,
+      });
 
       // 4 items processed sequentially by 1 worker -> 3 delays between requests
       expect(delays.length).toBe(3);

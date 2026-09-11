@@ -16,6 +16,7 @@ describe("manifest generator", () => {
       exported: 0,
       skipped: 0,
       failed: 0,
+      cached: 0,
     });
     expect(manifest.items).toEqual([]);
     expect(typeof manifest.generatedAt).toBe("string");
@@ -68,6 +69,7 @@ describe("manifest generator", () => {
       exported: 2,
       skipped: 1,
       failed: 3, // v4, v5, and unfinished v6
+      cached: 0,
     });
 
     expect(manifest.format).toBe("txt");
@@ -142,5 +144,42 @@ describe("manifest generator", () => {
     expect(parsed.summary.total).toBe(1);
     expect(parsed.summary.exported).toBe(1);
     expect(parsed.items[0]?.filename).toBe("1-Sample-Video-v1.csv");
+  });
+
+  it("accurately tracks and reports items loaded from transcript cache", () => {
+    const items: JobItem[] = [
+      {
+        videoId: "cached1",
+        title: "Cached Video 1",
+        status: "done",
+        fromCache: true,
+      },
+      {
+        videoId: "fresh1",
+        title: "Fresh Fetched Video",
+        status: "done",
+        fromCache: false,
+      },
+      {
+        videoId: "cached2",
+        title: "Cached Video 2",
+        status: "done",
+        fromCache: true,
+      },
+    ];
+
+    const manifest = createManifest(items, { format: "json" });
+
+    expect(manifest.summary).toEqual({
+      total: 3,
+      exported: 3,
+      skipped: 0,
+      failed: 0,
+      cached: 2,
+    });
+
+    expect(manifest.items[0]?.fromCache).toBe(true);
+    expect(manifest.items[1]?.fromCache).toBeUndefined();
+    expect(manifest.items[2]?.fromCache).toBe(true);
   });
 });

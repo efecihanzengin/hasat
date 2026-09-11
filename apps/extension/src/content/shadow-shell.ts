@@ -515,6 +515,11 @@ export function ensureMountPoint(doc: Document = document): MountPoint {
         border: 1px solid rgba(245, 158, 11, 0.35);
         color: #fbbf24;
       }
+      .banner-paused {
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        color: #fbbf24;
+      }
       .banner-failed {
         background: rgba(239, 68, 68, 0.15);
         border: 1px solid rgba(239, 68, 68, 0.35);
@@ -671,7 +676,8 @@ export function togglePanel(
   const customEvent = new CustomEvent(TOGGLE_EVENT_NAME, eventInit);
   mount.host.dispatchEvent(customEvent);
 
-  const win = doc.defaultView ?? (typeof window !== "undefined" ? window : null);
+  const win =
+    doc.defaultView ?? (typeof window !== "undefined" ? window : null);
   if (win) {
     win.dispatchEvent(new CustomEvent(TOGGLE_EVENT_NAME, eventInit));
   }

@@ -152,6 +152,7 @@ export function extractVideosFromBrowse(
   const rendererKeys = new Set([
     "videoRenderer",
     "playlistVideoRenderer",
+    "playlistPanelVideoRenderer",
     "gridVideoRenderer",
     "compactVideoRenderer",
     "lockupViewModel",

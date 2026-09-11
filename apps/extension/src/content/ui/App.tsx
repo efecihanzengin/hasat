@@ -5,11 +5,7 @@ import {
   type JobItem,
 } from "@youtube-transcript/core";
 import { closePanel } from "../shadow-shell.js";
-import {
-  ALL_FORMATS,
-  FORMAT_LABELS,
-  POPULAR_LANGUAGES,
-} from "./types.js";
+import { ALL_FORMATS, FORMAT_LABELS, POPULAR_LANGUAGES } from "./types.js";
 import { usePanelController } from "./use-panel-controller.js";
 
 export const App: React.FC = () => {
@@ -24,6 +20,7 @@ export const App: React.FC = () => {
     setSelectedLanguage,
     startExtraction,
     cancelExtraction,
+    resumeExtraction,
     downloadExport,
     resetToConfig,
     jobState,
@@ -37,7 +34,9 @@ export const App: React.FC = () => {
     ? jobState.summary.done + jobState.summary.skipped + jobState.summary.failed
     : 0;
   const progressPercent =
-    totalItems > 0 ? Math.min(100, Math.round((processedCount / totalItems) * 100)) : 0;
+    totalItems > 0
+      ? Math.min(100, Math.round((processedCount / totalItems) * 100))
+      : 0;
 
   return (
     <div className="panel-inner" data-testid="panel-app">
@@ -74,12 +73,19 @@ export const App: React.FC = () => {
             {detectedSource.type.toUpperCase()}
           </span>
           {detectedSource.estimatedCount !== undefined && (
-            <span className="source-count-badge" data-testid="source-count-badge">
+            <span
+              className="source-count-badge"
+              data-testid="source-count-badge"
+            >
               ~{detectedSource.estimatedCount} videos
             </span>
           )}
         </div>
-        <h2 className="source-title" data-testid="source-title" title={detectedSource.title}>
+        <h2
+          className="source-title"
+          data-testid="source-title"
+          title={detectedSource.title}
+        >
           {detectedSource.title}
         </h2>
         {detectedSource.handleOrAuthor && (
@@ -180,7 +186,10 @@ export const App: React.FC = () => {
           <div className="enumerating-view" data-testid="enumerating-view">
             <div className="spinner" aria-hidden="true" />
             <h3 className="enumerating-title">Discovering videos...</h3>
-            <p className="enumerating-counter" data-testid="enumerating-counter">
+            <p
+              className="enumerating-counter"
+              data-testid="enumerating-counter"
+            >
               Found {enumeratedCount} video{enumeratedCount === 1 ? "" : "s"}
             </p>
             <p className="enumerating-subtext">
@@ -195,7 +204,10 @@ export const App: React.FC = () => {
             {/* Progress Counter & Bar */}
             <div className="progress-section">
               <div className="progress-header">
-                <span className="progress-counter" data-testid="progress-counter">
+                <span
+                  className="progress-counter"
+                  data-testid="progress-counter"
+                >
                   {processedCount} / {totalItems}
                 </span>
                 <span className="progress-percent">{progressPercent}%</span>
@@ -238,25 +250,74 @@ export const App: React.FC = () => {
         )}
 
         {/* VIEW D: Completed / Cancelled */}
-        {(viewState === "completed" || viewState === "cancelled") && jobState && (
-          <div className="completion-view" data-testid="completion-view">
+        {(viewState === "completed" || viewState === "cancelled") &&
+          jobState && (
+            <div className="completion-view" data-testid="completion-view">
+              <div
+                className={`summary-banner ${
+                  viewState === "completed"
+                    ? "banner-completed"
+                    : "banner-cancelled"
+                }`}
+                data-testid="completion-banner"
+              >
+                <span className="summary-banner-icon">
+                  {viewState === "completed" ? "✓" : "⚠"}
+                </span>
+                <div className="summary-banner-content">
+                  <h3 className="summary-banner-title">
+                    {viewState === "completed"
+                      ? "Extraction Complete"
+                      : "Extraction Cancelled"}
+                  </h3>
+                  <p
+                    className="summary-banner-text"
+                    data-testid="summary-banner-text"
+                  >
+                    {jobState.summary.done} exported, {jobState.summary.skipped}{" "}
+                    skipped, {jobState.summary.failed} failed
+                  </p>
+                </div>
+              </div>
+
+              {/* Scrollable Items List */}
+              <div className="items-list-container">
+                <h4 className="items-list-title">Summary of Videos</h4>
+                <div className="items-scroll-list" data-testid="items-list">
+                  {jobState.items.map((item: JobItem, index: number) => (
+                    <VideoItemRow
+                      key={item.videoId}
+                      item={item}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+        {/* VIEW: Paused (Circuit Breaker) */}
+        {viewState === "paused" && jobState && (
+          <div className="completion-view" data-testid="paused-view">
             <div
-              className={`summary-banner ${
-                viewState === "completed" ? "banner-completed" : "banner-cancelled"
-              }`}
-              data-testid="completion-banner"
+              className="summary-banner banner-paused"
+              data-testid="paused-banner"
             >
-              <span className="summary-banner-icon">
-                {viewState === "completed" ? "✓" : "⚠"}
-              </span>
+              <span className="summary-banner-icon">⏸</span>
               <div className="summary-banner-content">
-                <h3 className="summary-banner-title">
-                  {viewState === "completed"
-                    ? "Extraction Complete"
-                    : "Extraction Cancelled"}
+                <h3
+                  className="summary-banner-title"
+                  data-testid="paused-banner-title"
+                >
+                  YouTube hız sınırı — tamamlananlar kaydedildi, sonra devam
+                  edebilirsin
                 </h3>
-                <p className="summary-banner-text" data-testid="summary-banner-text">
-                  {jobState.summary.done} exported, {jobState.summary.skipped} skipped, {jobState.summary.failed} failed
+                <p
+                  className="summary-banner-text"
+                  data-testid="summary-banner-text"
+                >
+                  {jobState.summary.done} exported, {jobState.summary.skipped}{" "}
+                  skipped, {jobState.summary.failed} failed
                 </p>
               </div>
             </div>
@@ -281,7 +342,8 @@ export const App: React.FC = () => {
               <div className="summary-banner-content">
                 <h3 className="summary-banner-title">Extraction Failed</h3>
                 <p className="summary-banner-text">
-                  {errorMessage || "An unexpected error occurred during extraction."}
+                  {errorMessage ||
+                    "An unexpected error occurred during extraction."}
                 </p>
               </div>
             </div>
@@ -331,7 +393,41 @@ export const App: React.FC = () => {
               type="button"
               className="btn btn-primary"
               data-testid="download-btn"
-              disabled={isDownloading || !jobState || jobState.summary.done === 0}
+              disabled={
+                isDownloading || !jobState || jobState.summary.done === 0
+              }
+              onClick={() => void downloadExport()}
+            >
+              {isDownloading ? "Preparing .zip..." : "Download (.zip)"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              data-testid="new-job-btn"
+              onClick={resetToConfig}
+            >
+              New Extraction
+            </button>
+          </div>
+        )}
+
+        {viewState === "paused" && (
+          <div className="footer-actions-group">
+            <button
+              type="button"
+              className="btn btn-primary"
+              data-testid="resume-btn"
+              onClick={() => void resumeExtraction()}
+            >
+              Resume Extraction
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              data-testid="download-btn"
+              disabled={
+                isDownloading || !jobState || jobState.summary.done === 0
+              }
               onClick={() => void downloadExport()}
             >
               {isDownloading ? "Preparing .zip..." : "Download (.zip)"}

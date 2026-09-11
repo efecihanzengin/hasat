@@ -59,7 +59,10 @@ export class MockDOMTokenList {
 export class MockEventTarget {
   private listeners: Map<string, Set<EventListener>> = new Map();
 
-  addEventListener(type: string, listener: EventListenerOrEventListenerObject | null): void {
+  addEventListener(
+    type: string,
+    listener: EventListenerOrEventListenerObject | null
+  ): void {
     if (!listener) return;
     const fn = typeof listener === "function" ? listener : listener.handleEvent;
     if (!this.listeners.has(type)) {
@@ -68,7 +71,10 @@ export class MockEventTarget {
     this.listeners.get(type)?.add(fn);
   }
 
-  removeEventListener(type: string, listener: EventListenerOrEventListenerObject | null): void {
+  removeEventListener(
+    type: string,
+    listener: EventListenerOrEventListenerObject | null
+  ): void {
     if (!listener) return;
     const fn = typeof listener === "function" ? listener : listener.handleEvent;
     this.listeners.get(type)?.delete(fn);
@@ -148,7 +154,6 @@ export class MockElement extends MockNode {
     this.childNodes = [];
   }
 
-
   get className(): string {
     return this.classList.toString();
   }
@@ -211,7 +216,9 @@ export class MockElement extends MockNode {
 
   click(): void {
     const event =
-      typeof Event !== "undefined" ? new Event("click") : ({ type: "click" } as Event);
+      typeof Event !== "undefined"
+        ? new Event("click")
+        : ({ type: "click" } as Event);
     this.dispatchEvent(event);
   }
 }
@@ -288,7 +295,6 @@ export class MockMutationObserver {
     this.target = target;
   }
 
-
   disconnect(): void {
     this.target = null;
     const idx = MockMutationObserver.activeObservers.indexOf(this);
@@ -324,7 +330,6 @@ export class MockMutationObserver {
     this.activeObservers = [];
     this.isNotifying = false;
   }
-
 }
 
 export class MockWindow extends MockEventTarget {
@@ -427,7 +432,10 @@ function findByIdInternal(root: MockNode, id: string): MockElement | null {
   return null;
 }
 
-function querySelectorInternal(root: MockNode, selector: string): MockElement | null {
+function querySelectorInternal(
+  root: MockNode,
+  selector: string
+): MockElement | null {
   for (const child of root.childNodes) {
     if (child instanceof MockElement) {
       if (matchesSelector(child, selector)) return child;
@@ -438,7 +446,10 @@ function querySelectorInternal(root: MockNode, selector: string): MockElement | 
   return null;
 }
 
-function querySelectorAllInternal(root: MockNode, selector: string): MockElement[] {
+function querySelectorAllInternal(
+  root: MockNode,
+  selector: string
+): MockElement[] {
   const results: MockElement[] = [];
   function walk(node: MockNode): void {
     for (const child of node.childNodes) {

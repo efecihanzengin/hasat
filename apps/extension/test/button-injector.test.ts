@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { MockDocument, MockElement, MockMutationObserver, MockWindow } from "./mock-dom.js";
+import {
+  MockDocument,
+  MockElement,
+  MockMutationObserver,
+  MockWindow,
+} from "./mock-dom.js";
 import {
   BUTTON_ID,
   isTargetPage,
@@ -11,7 +16,10 @@ import {
   cleanupTranscribeButton,
   initButtonInjection,
 } from "../src/content/button-injector.js";
-import { isPanelOpen, _resetPanelStateForTesting } from "../src/content/shadow-shell.js";
+import {
+  isPanelOpen,
+  _resetPanelStateForTesting,
+} from "../src/content/shadow-shell.js";
 
 describe("Button Injector & SPA Lifecycle", () => {
   let mockWin: MockWindow;
@@ -46,10 +54,15 @@ describe("Button Injector & SPA Lifecycle", () => {
     });
 
     it("identifies playlist URLs accurately", () => {
-      expect(isPlaylistUrl("/playlist", "?list=PLrAXtmErZgOdP_8GztsuKi9nvOGQofMR4")).toBe(true);
-      expect(isPlaylistUrl("/playlist", "list=PLrAXtmErZgOdP_8GztsuKi9nvOGQofMR4")).toBe(true);
+      expect(
+        isPlaylistUrl("/playlist", "?list=PLrAXtmErZgOdP_8GztsuKi9nvOGQofMR4")
+      ).toBe(true);
+      expect(
+        isPlaylistUrl("/playlist", "list=PLrAXtmErZgOdP_8GztsuKi9nvOGQofMR4")
+      ).toBe(true);
       expect(isPlaylistUrl("/playlist", "")).toBe(false);
-      expect(isPlaylistUrl("/watch", "?v=123&list=PL123")).toBe(false);
+      expect(isPlaylistUrl("/watch", "?v=123&list=PL123")).toBe(true);
+      expect(isPlaylistUrl("/watch", "?v=123")).toBe(false);
     });
 
     it("detects target pages with isTargetPage", () => {
@@ -57,11 +70,23 @@ describe("Button Injector & SPA Lifecycle", () => {
         isMatch: true,
         type: "channel",
       });
-      expect(isTargetPage("https://www.youtube.com/playlist?list=PL12345")).toEqual({
+      expect(
+        isTargetPage("https://www.youtube.com/playlist?list=PL12345")
+      ).toEqual({
         isMatch: true,
         type: "playlist",
       });
-      expect(isTargetPage("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toEqual({
+      expect(
+        isTargetPage(
+          "https://www.youtube.com/watch?v=tmw7oYG3vMU&list=PL_JVnPgp2IRdpXdNpsZOqi0xk9k1aXQ93"
+        )
+      ).toEqual({
+        isMatch: true,
+        type: "playlist",
+      });
+      expect(
+        isTargetPage("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+      ).toEqual({
         isMatch: false,
         type: null,
       });
@@ -69,7 +94,9 @@ describe("Button Injector & SPA Lifecycle", () => {
         isMatch: false,
         type: null,
       });
-      expect(isTargetPage("https://www.youtube.com/results?search_query=podcast")).toEqual({
+      expect(
+        isTargetPage("https://www.youtube.com/results?search_query=podcast")
+      ).toEqual({
         isMatch: false,
         type: null,
       });
@@ -84,7 +111,10 @@ describe("Button Injector & SPA Lifecycle", () => {
       channelHeader.appendChild(buttonsContainer);
       mockDoc.body.appendChild(channelHeader);
 
-      const target = findTargetContainer(mockDoc as unknown as Document, "channel");
+      const target = findTargetContainer(
+        mockDoc as unknown as Document,
+        "channel"
+      );
       expect(target).toBe(buttonsContainer);
     });
 
@@ -95,7 +125,10 @@ describe("Button Injector & SPA Lifecycle", () => {
       pageHeader.appendChild(actionButtons);
       mockDoc.body.appendChild(pageHeader);
 
-      const target = findTargetContainer(mockDoc as unknown as Document, "channel");
+      const target = findTargetContainer(
+        mockDoc as unknown as Document,
+        "channel"
+      );
       expect(target).toBe(actionButtons);
     });
 
@@ -106,8 +139,25 @@ describe("Button Injector & SPA Lifecycle", () => {
       playlistHeader.appendChild(actionBar);
       mockDoc.body.appendChild(playlistHeader);
 
-      const target = findTargetContainer(mockDoc as unknown as Document, "playlist");
+      const target = findTargetContainer(
+        mockDoc as unknown as Document,
+        "playlist"
+      );
       expect(target).toBe(actionBar);
+    });
+
+    it("detects watch page playlist panel action container", () => {
+      const panel = new MockElement("ytd-playlist-panel-renderer");
+      const panelButtons = new MockElement("div");
+      panelButtons.id = "top-level-buttons-computed";
+      panel.appendChild(panelButtons);
+      mockDoc.body.appendChild(panel);
+
+      const target = findTargetContainer(
+        mockDoc as unknown as Document,
+        "playlist"
+      );
+      expect(target).toBe(panelButtons);
     });
 
     it("strictly excludes masthead buttons from matching", () => {
@@ -127,7 +177,10 @@ describe("Button Injector & SPA Lifecycle", () => {
   describe("Button Creation and Click Behavior", () => {
     it("creates an accessible Transcribe button with label and SVG icon", () => {
       const clickSpy = vi.fn();
-      const button = createTranscribeButton(clickSpy, mockDoc as unknown as Document);
+      const button = createTranscribeButton(
+        clickSpy,
+        mockDoc as unknown as Document
+      );
 
       expect(button.id).toBe(BUTTON_ID);
       expect(button.getAttribute("aria-label")).toBe("Transcribe");
@@ -149,12 +202,18 @@ describe("Button Injector & SPA Lifecycle", () => {
       header.appendChild(buttons);
       mockDoc.body.appendChild(header);
 
-      const btn1 = injectTranscribeButton(mockDoc as unknown as Document, "channel");
+      const btn1 = injectTranscribeButton(
+        mockDoc as unknown as Document,
+        "channel"
+      );
       expect(btn1).toBeDefined();
       expect(buttons.querySelectorAll(`#${BUTTON_ID}`).length).toBe(1);
 
       // Second injection attempt should return the existing button
-      const btn2 = injectTranscribeButton(mockDoc as unknown as Document, "channel");
+      const btn2 = injectTranscribeButton(
+        mockDoc as unknown as Document,
+        "channel"
+      );
       expect(btn2).toBe(btn1);
       expect(buttons.querySelectorAll(`#${BUTTON_ID}`).length).toBe(1);
     });
@@ -178,7 +237,10 @@ describe("Button Injector & SPA Lifecycle", () => {
       newHeader.appendChild(newButtons);
       mockDoc.body.appendChild(newHeader);
 
-      const newBtn = injectTranscribeButton(mockDoc as unknown as Document, "channel");
+      const newBtn = injectTranscribeButton(
+        mockDoc as unknown as Document,
+        "channel"
+      );
       expect(newBtn).toBeDefined();
       expect(newButtons.querySelectorAll(`#${BUTTON_ID}`).length).toBe(1);
       expect(mockDoc.querySelectorAll(`#${BUTTON_ID}`).length).toBe(1);

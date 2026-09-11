@@ -35,6 +35,7 @@ export type JobItem = {
   title: string;
   status: JobItemStatus;
   error?: ExtractionError;
+  fromCache?: boolean;
 };
 
 export type CaptionTrack = {
@@ -103,6 +104,7 @@ export type ManifestSummary = {
   exported: number;
   skipped: number;
   failed: number;
+  cached: number;
 };
 
 export type ManifestItem = {
@@ -112,6 +114,7 @@ export type ManifestItem = {
   status: JobItemStatus;
   filename?: string;
   error?: ExtractionError;
+  fromCache?: boolean;
 };
 
 export type ExportManifest = {

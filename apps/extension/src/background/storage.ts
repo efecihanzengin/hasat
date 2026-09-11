@@ -13,6 +13,15 @@ export interface JobStorage {
   ): Promise<void>;
   getTranscript(jobId: string, videoId: string): Promise<Transcript | null>;
   clearJob(jobId: string): Promise<void>;
+  saveCachedTranscript(
+    videoId: string,
+    language: string,
+    transcript: Transcript
+  ): Promise<void>;
+  getCachedTranscript(
+    videoId: string,
+    language: string
+  ): Promise<Transcript | null>;
 }
 
 export const ACTIVE_JOB_KEY = "active_job_id" as const;
@@ -26,6 +35,13 @@ export function formatTranscriptStorageKey(
   videoId: string
 ): string {
   return `transcript:${jobId}:${videoId}`;
+}
+
+export function formatTranscriptCacheKey(
+  videoId: string,
+  language: string
+): string {
+  return `cache:${videoId}:${language}`;
 }
 
 export class MemoryJobStorage implements JobStorage {
@@ -91,6 +107,26 @@ export class MemoryJobStorage implements JobStorage {
       this.store.delete(key);
     }
   }
+
+  async saveCachedTranscript(
+    videoId: string,
+    language: string,
+    transcript: Transcript
+  ): Promise<void> {
+    this.store.set(
+      formatTranscriptCacheKey(videoId, language),
+      structuredClone(transcript)
+    );
+  }
+
+  async getCachedTranscript(
+    videoId: string,
+    language: string
+  ): Promise<Transcript | null> {
+    const data = this.store.get(formatTranscriptCacheKey(videoId, language));
+    if (!data) return null;
+    return structuredClone(data as Transcript);
+  }
 }
 
 export class ChromeJobStorage implements JobStorage {
@@ -155,5 +191,24 @@ export class ChromeJobStorage implements JobStorage {
     }
 
     await chrome.storage.local.remove(toRemove);
+  }
+
+  async saveCachedTranscript(
+    videoId: string,
+    language: string,
+    transcript: Transcript
+  ): Promise<void> {
+    const key = formatTranscriptCacheKey(videoId, language);
+    await chrome.storage.local.set({ [key]: transcript });
+  }
+
+  async getCachedTranscript(
+    videoId: string,
+    language: string
+  ): Promise<Transcript | null> {
+    const key = formatTranscriptCacheKey(videoId, language);
+    const result = await chrome.storage.local.get(key);
+    const val = result[key];
+    return val ? (val as Transcript) : null;
   }
 }

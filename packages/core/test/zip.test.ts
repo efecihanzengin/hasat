@@ -150,6 +150,7 @@ describe("zip packaging module", () => {
         exported: 2,
         skipped: 1,
         failed: 1,
+        cached: 0,
       });
       expect(result.manifest.channelOrPlaylist).toBe("Tech Channel");
 
@@ -239,8 +240,7 @@ describe("zip packaging module", () => {
 
       const result = await buildTranscriptArchive({
         items,
-        getTranscript: () =>
-          createMockTranscript("m1", "Multi Format Test"),
+        getTranscript: () => createMockTranscript("m1", "Multi Format Test"),
         formats: ["txt", "markdown", "json"],
       });
 
@@ -265,6 +265,45 @@ describe("zip packaging module", () => {
       const unzipped = unzipSync(result.zipData);
       expect(Object.keys(unzipped)).toEqual(["manifest.json"]);
       expect(result.manifest.summary.total).toBe(0);
+    });
+
+    it("includes cached count and fromCache status in archive manifest", async () => {
+      const items: JobItem[] = [
+        {
+          videoId: "vidC1",
+          title: "Cached Item",
+          status: "done",
+          fromCache: true,
+        },
+        {
+          videoId: "vidN1",
+          title: "Fresh Item",
+          status: "done",
+        },
+      ];
+
+      const transcriptsMap: Record<string, Transcript> = {
+        vidC1: createMockTranscript("vidC1", "Cached Item"),
+        vidN1: createMockTranscript("vidN1", "Fresh Item"),
+      };
+
+      const result = await buildTranscriptArchive({
+        items,
+        getTranscript: (videoId) => transcriptsMap[videoId] ?? null,
+        format: "txt",
+      });
+
+      expect(result.manifest.summary.cached).toBe(1);
+      expect(result.manifest.items[0]?.fromCache).toBe(true);
+      expect(result.manifest.items[1]?.fromCache).toBeUndefined();
+
+      const unzipped = unzipSync(result.zipData);
+      const manifestInZip = JSON.parse(
+        strFromU8(unzipped["manifest.json"] as Uint8Array)
+      ) as ExportManifest;
+
+      expect(manifestInZip.summary.cached).toBe(1);
+      expect(manifestInZip.items[0]?.fromCache).toBe(true);
     });
   });
 });

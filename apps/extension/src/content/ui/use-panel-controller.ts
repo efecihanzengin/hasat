@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type {
-  ExportFormat,
-  YouTubeContext,
-} from "@youtube-transcript/core";
+import type { ExportFormat, YouTubeContext } from "@youtube-transcript/core";
 import {
   YTE_LIVENESS_PORT,
   type JobPortEvent,
@@ -98,6 +95,11 @@ export function usePanelController(options?: PanelControllerOptions) {
           setJobState(event.job);
           setViewState("cancelled");
           disconnectPort();
+        } else if (event.type === "JOB_PAUSED") {
+          setJobState(event.job);
+          setViewState("paused");
+          setErrorMessage(event.message ?? event.job.error ?? null);
+          disconnectPort();
         } else if (event.type === "JOB_FAILED") {
           setJobState(event.job);
           setViewState("failed");
@@ -151,6 +153,9 @@ export function usePanelController(options?: PanelControllerOptions) {
             setViewState("completed");
           } else if (existingJob.status === "cancelled") {
             setViewState("cancelled");
+          } else if (existingJob.status === "paused") {
+            setViewState("paused");
+            setErrorMessage(existingJob.error ?? null);
           } else if (existingJob.status === "failed") {
             setViewState("failed");
             setErrorMessage(existingJob.error ?? "Previous job failed");
@@ -370,6 +375,41 @@ export function usePanelController(options?: PanelControllerOptions) {
     disconnectPort();
   }, [disconnectPort]);
 
+  // Resume paused extraction
+  const resumeExtraction = useCallback(async () => {
+    if (!jobState) {
+      return;
+    }
+
+    setErrorMessage(null);
+    setViewState("running");
+    connectLivenessPort();
+
+    if (!runtime?.sendMessage) {
+      setViewState("failed");
+      setErrorMessage("Chrome runtime unavailable");
+      return;
+    }
+
+    runtime.sendMessage(
+      {
+        type: "RESUME_JOB",
+        payload: { jobId: jobState.id },
+      },
+      (response: ServiceWorkerResponse<JobState>) => {
+        if (!response || !response.ok) {
+          setViewState("failed");
+          setErrorMessage(
+            response?.error?.message ?? "Failed to resume extraction job"
+          );
+          disconnectPort();
+        } else {
+          setJobState(response.data);
+        }
+      }
+    );
+  }, [jobState, runtime, connectLivenessPort, disconnectPort]);
+
   return {
     viewState,
     detectedSource,
@@ -381,6 +421,7 @@ export function usePanelController(options?: PanelControllerOptions) {
     setSelectedLanguage,
     startExtraction,
     cancelExtraction,
+    resumeExtraction,
     downloadExport,
     resetToConfig,
     jobState,

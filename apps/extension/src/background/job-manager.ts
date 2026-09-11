@@ -13,8 +13,13 @@ import {
   type GetJobStatusPayload,
   type JobPortEvent,
   type JobState,
+  type ResumeJobPayload,
   type StartJobPayload,
 } from "./types.js";
+
+export const CIRCUIT_BREAKER_RATE_LIMIT_THRESHOLD = 3;
+export const CIRCUIT_BREAKER_MESSAGE =
+  "YouTube hız sınırı — tamamlananlar kaydedildi, sonra devam edebilirsin";
 
 export type JobManagerOptions = {
   storage?: JobStorage;
@@ -146,12 +151,14 @@ export class JobManager {
         done: 0,
         skipped: 0,
         failed: 0,
+        cached: 0,
       },
       channelOrPlaylist: payload.channelOrPlaylist,
       preferredLanguage: payload.preferredLanguage,
       format: payload.format,
       formats: payload.formats,
       formatOptions: payload.formatOptions,
+      context: payload.context,
       createdAt: Date.now(),
     };
 
@@ -178,12 +185,49 @@ export class JobManager {
     if (!job) return;
 
     const signal = abortController.signal;
+    let consecutiveRateLimits = 0;
+    let circuitBreakerTripped = false;
 
     try {
       await processQueue(
         job.items,
         async (item, workerSignal) => {
           if (workerSignal?.aborted || signal.aborted) {
+            return;
+          }
+
+          // If item is already completed or skipped (e.g. on resume), do not re-process
+          if (item.status === "done" || item.status === "skipped") {
+            return;
+          }
+
+          const targetLang = payload.preferredLanguage || "auto";
+
+          // 1. Check transcript cache first before hitting network
+          const cachedTranscript = await this.storage.getCachedTranscript(
+            item.videoId,
+            targetLang
+          );
+
+          if (cachedTranscript) {
+            item.fromCache = true;
+            item.status = "done";
+            item.error = undefined;
+            await this.storage.saveTranscript(
+              job.id,
+              item.videoId,
+              cachedTranscript
+            );
+            job.summary.done += 1;
+            job.summary.cached = (job.summary.cached ?? 0) + 1;
+            consecutiveRateLimits = 0;
+
+            await this.storage.saveJob(job);
+            this.broadcast({
+              type: "JOB_PROGRESS",
+              job,
+              updatedItem: item,
+            });
             return;
           }
 
@@ -217,18 +261,46 @@ export class JobManager {
               item.videoId,
               result.value
             );
+            // Save to transcript cache under targetLang
+            await this.storage.saveCachedTranscript(
+              item.videoId,
+              targetLang,
+              result.value
+            );
+            // Also cache under actual detected language if different
+            if (result.value.language && result.value.language !== targetLang) {
+              await this.storage.saveCachedTranscript(
+                item.videoId,
+                result.value.language,
+                result.value
+              );
+            }
+
             item.status = "done";
             item.error = undefined;
             job.summary.done += 1;
+            consecutiveRateLimits = 0;
           } else {
             const error: ExtractionError = result.error;
             item.error = error;
             if (error.code === "LIVE_STREAM") {
               item.status = "skipped";
               job.summary.skipped += 1;
+              consecutiveRateLimits = 0;
             } else {
               item.status = "failed";
               job.summary.failed += 1;
+              if (error.code === "RATE_LIMITED") {
+                consecutiveRateLimits += 1;
+                if (
+                  consecutiveRateLimits >= CIRCUIT_BREAKER_RATE_LIMIT_THRESHOLD
+                ) {
+                  circuitBreakerTripped = true;
+                  abortController.abort();
+                }
+              } else {
+                consecutiveRateLimits = 0;
+              }
             }
           }
 
@@ -248,7 +320,16 @@ export class JobManager {
         }
       );
 
-      if (signal.aborted) {
+      if (circuitBreakerTripped) {
+        job.status = "paused";
+        job.error = CIRCUIT_BREAKER_MESSAGE;
+        await this.storage.saveJob(job);
+        this.broadcast({
+          type: "JOB_PAUSED",
+          job,
+          message: CIRCUIT_BREAKER_MESSAGE,
+        });
+      } else if (signal.aborted) {
         job.status = "cancelled";
         await this.storage.saveJob(job);
         this.broadcast({ type: "JOB_CANCELLED", job });
@@ -259,7 +340,16 @@ export class JobManager {
         this.broadcast({ type: "JOB_COMPLETED", job });
       }
     } catch (err) {
-      if (signal.aborted) {
+      if (circuitBreakerTripped) {
+        job.status = "paused";
+        job.error = CIRCUIT_BREAKER_MESSAGE;
+        await this.storage.saveJob(job);
+        this.broadcast({
+          type: "JOB_PAUSED",
+          job,
+          message: CIRCUIT_BREAKER_MESSAGE,
+        });
+      } else if (signal.aborted) {
         job.status = "cancelled";
         await this.storage.saveJob(job);
         this.broadcast({ type: "JOB_CANCELLED", job });
@@ -331,5 +421,65 @@ export class JobManager {
     }
 
     return null;
+  }
+
+  /**
+   * Resumes a paused extraction job (e.g. after circuit breaker triggered).
+   */
+  async resumeJob(payload?: ResumeJobPayload): Promise<JobState> {
+    let job = this.currentJobState;
+    if (!job && payload?.jobId) {
+      job = await this.storage.getJob(payload.jobId);
+    }
+    if (!job) {
+      const activeId = await this.storage.getActiveJobId();
+      if (activeId) {
+        job = await this.storage.getJob(activeId);
+      }
+    }
+
+    if (!job) {
+      throw createExtractionError("UNKNOWN", "No active job found to resume");
+    }
+
+    if (job.status !== "paused") {
+      throw createExtractionError(
+        "UNKNOWN",
+        `Cannot resume job with status "${job.status}"`
+      );
+    }
+
+    // Reset rate-limited failed items back to pending so they can be re-attempted
+    for (const item of job.items) {
+      if (item.status === "failed" && item.error?.code === "RATE_LIMITED") {
+        item.status = "pending";
+        item.error = undefined;
+        job.summary.failed = Math.max(0, job.summary.failed - 1);
+      }
+    }
+
+    job.status = "running";
+    job.error = undefined;
+    this.currentJobState = job;
+    this.currentAbortController = new AbortController();
+
+    await this.storage.saveJob(job);
+    this.startHeartbeat();
+    this.broadcast({ type: "JOB_PROGRESS", job });
+
+    const resumePayload: StartJobPayload = {
+      jobId: job.id,
+      videos: job.items.map((i) => ({ videoId: i.videoId, title: i.title })),
+      context: job.context,
+      preferredLanguage: job.preferredLanguage,
+      format: job.format,
+      formats: job.formats,
+      formatOptions: job.formatOptions,
+      channelOrPlaylist: job.channelOrPlaylist,
+    };
+
+    void this.executeJobQueue(resumePayload, this.currentAbortController);
+
+    return job;
   }
 }

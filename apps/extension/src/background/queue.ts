@@ -1,9 +1,9 @@
 import { defaultDelay, type DelayFunction } from "./retry.js";
 
-export const DEFAULT_CONCURRENCY = 3;
+export const DEFAULT_CONCURRENCY = 1;
 export const MAX_CONCURRENCY = 5;
-export const MIN_JITTER_MS = 250;
-export const MAX_JITTER_MS = 500;
+export const MIN_JITTER_MS = 1000;
+export const MAX_JITTER_MS = 2000;
 
 export function getRandomJitterDelay(
   min = MIN_JITTER_MS,
@@ -30,8 +30,8 @@ export type QueueProcessStats = {
 
 /**
  * Throttled concurrent queue processor with jittered delays and AbortSignal support.
- * Complies with SPEC §4.3: Max 3 concurrent fetches (configurable, hard ceiling 5),
- * and 250-500ms jittered delay between requests.
+ * Complies with SPEC §4.3: Concurrency 1 by default (configurable, hard ceiling 5),
+ * and 1000-2000ms jittered delay between requests.
  */
 export async function processQueue<T, R>(
   items: readonly T[],

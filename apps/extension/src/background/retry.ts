@@ -3,14 +3,9 @@ import {
   type ExtractionError,
 } from "@youtube-transcript/core";
 
-export const DEFAULT_429_BACKOFF_SCHEDULE = [
-  1000, 2000, 4000, 8000,
-] as const;
+export const DEFAULT_429_BACKOFF_SCHEDULE = [1000, 2000, 4000, 8000] as const;
 
-export type DelayFunction = (
-  ms: number,
-  signal?: AbortSignal
-) => Promise<void>;
+export type DelayFunction = (ms: number, signal?: AbortSignal) => Promise<void>;
 
 export async function defaultDelay(
   ms: number,
@@ -58,9 +53,7 @@ export type RetryOptions = {
 export async function executeWith429Retry<T>(
   operation: (attempt: number) => Promise<RetryableOperationResult<T>>,
   options?: RetryOptions
-): Promise<
-  { ok: true; value: T } | { ok: false; error: ExtractionError }
-> {
+): Promise<{ ok: true; value: T } | { ok: false; error: ExtractionError }> {
   const schedule = options?.backoffSchedule ?? DEFAULT_429_BACKOFF_SCHEDULE;
   const delay = options?.delayFn ?? defaultDelay;
   const signal = options?.signal;

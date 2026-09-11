@@ -111,11 +111,13 @@ Enumeration uses YouTube's InnerTube `browse` endpoint.
 
 ### 4.3 Concurrency and pacing
 
-- Fixed 3 concurrent video fetches (not configurable in the UI).
-- 250–500ms jittered delay between requests.
+- Fixed 1 concurrent video fetch by default (not configurable in the UI).
+- 1000–2000ms jittered delay between requests.
 - On HTTP 429: exponential backoff (1s, 2s, 4s, 8s), max 4 retries, then mark
-  the item `failed` and continue with the rest of the job. Never abort the
-  whole job because of one video.
+  the item `failed` and continue with the rest of the job.
+- Job-level circuit breaker: If 3 consecutive videos fail with `RATE_LIMITED`,
+  pause the job completely and show "YouTube hız sınırı — tamamlananlar kaydedildi, sonra devam edebilirsin"
+  in the panel. Do not continue sending requests for remaining videos.
 
 ---
 

@@ -3,10 +3,16 @@ import { ensureMountPoint, togglePanel } from "./shadow-shell.js";
 export const BUTTON_ID = "yt-bulk-transcript-btn";
 
 export const CHANNEL_HEADER_SELECTORS = [
+  "ytd-browse:not([hidden]) yt-page-header-renderer .ytFlexibleActionsViewModelActionRow",
+  "ytd-browse:not([hidden]) yt-page-header-renderer yt-flexible-actions-view-model",
+  "ytd-browse:not([hidden]) yt-page-header-renderer #page-header-action-buttons",
+  "ytd-browse:not([hidden]) yt-page-header-renderer .page-header-view-model-wiz__page-header-actions",
+  "ytd-browse:not([hidden]) ytd-channel-header-renderer #buttons",
+  "ytd-browse:not([hidden]) ytd-c4-tabbed-header-renderer #buttons",
+  "ytd-browse:not([hidden]) #channel-header #buttons",
+  "ytd-browse:not([hidden]) #inner-header-container #buttons",
   "yt-page-header-renderer .ytFlexibleActionsViewModelActionRow",
   "yt-page-header-renderer yt-flexible-actions-view-model",
-  ".ytFlexibleActionsViewModelActionRow",
-  "yt-flexible-actions-view-model",
   "yt-page-header-renderer #page-header-action-buttons",
   "yt-page-header-renderer .page-header-view-model-wiz__page-header-actions",
   "ytd-channel-header-renderer #buttons",
@@ -16,15 +22,51 @@ export const CHANNEL_HEADER_SELECTORS = [
 ];
 
 export const PLAYLIST_HEADER_SELECTORS = [
+  "ytd-watch-flexy:not([hidden]) ytd-playlist-panel-renderer #header-contents",
+  "ytd-watch-flexy:not([hidden]) ytd-playlist-panel-renderer #header",
+  "ytd-watch-flexy:not([hidden]) ytd-playlist-panel-renderer .header",
+  "ytd-watch-flexy:not([hidden]) ytd-playlist-panel-renderer #header-top-row",
+  "ytd-watch-flexy:not([hidden]) ytd-playlist-panel-renderer .playlist-buttons",
+  "ytd-playlist-panel-renderer #header-contents",
+  "ytd-playlist-panel-renderer #header",
+  "ytd-playlist-panel-renderer .header",
+  "ytd-playlist-panel-renderer #header-top-row",
+  "ytd-playlist-panel-renderer .playlist-buttons",
+  "ytd-playlist-panel-renderer #top-level-buttons",
+  "ytd-playlist-panel-renderer #top-level-buttons-computed",
+  "ytd-playlist-panel-renderer ytd-menu-renderer",
+  "ytd-playlist-panel-renderer",
+  "ytd-browse:not([hidden]) yt-page-header-renderer .ytFlexibleActionsViewModelActionRow",
+  "ytd-browse:not([hidden]) yt-page-header-renderer yt-flexible-actions-view-model",
+  "ytd-browse:not([hidden]) yt-page-header-renderer #page-header-action-buttons",
+  "ytd-browse:not([hidden]) yt-page-header-renderer .page-header-view-model-wiz__page-header-actions",
+  "ytd-browse:not([hidden]) ytd-playlist-sidebar-renderer #actions",
+  "ytd-browse:not([hidden]) ytd-playlist-sidebar-renderer .metadata-action-bar",
+  "ytd-browse:not([hidden]) ytd-playlist-sidebar-renderer #buttons",
+  "ytd-browse:not([hidden]) ytd-playlist-sidebar-renderer yt-flexible-actions-view-model",
+  "ytd-browse:not([hidden]) ytd-playlist-header-renderer .metadata-action-bar",
+  "ytd-browse:not([hidden]) ytd-playlist-header-renderer #actions",
+  "ytd-browse:not([hidden]) ytd-playlist-header-renderer #buttons",
+  "yt-page-header-renderer .ytFlexibleActionsViewModelActionRow",
+  "yt-page-header-renderer yt-flexible-actions-view-model",
+  "yt-page-header-renderer #page-header-action-buttons",
+  "yt-page-header-renderer .page-header-view-model-wiz__page-header-actions",
+  "ytd-playlist-sidebar-renderer #actions",
+  "ytd-playlist-sidebar-renderer .metadata-action-bar",
+  "ytd-playlist-sidebar-renderer #buttons",
+  "ytd-playlist-sidebar-renderer yt-flexible-actions-view-model",
+  "ytd-playlist-sidebar-renderer .ytFlexibleActionsViewModelActionRow",
   "ytd-playlist-header-renderer .metadata-action-bar",
   "ytd-playlist-header-renderer #actions",
   "ytd-playlist-header-renderer #buttons",
+  "ytd-playlist-header-renderer #top-level-buttons-computed",
+  "ytd-playlist-header-renderer ytd-menu-renderer",
   "ytd-playlist-header-renderer .action-bar-view-model",
   "ytd-playlist-header-renderer yt-flexible-actions-view-model",
   "ytd-playlist-header-renderer .ytFlexibleActionsViewModelActionRow",
+  "ytd-playlist-header-renderer .metadata-action-bar-buttons",
   ".metadata-action-bar",
 ];
-
 
 export type TargetPageType = "channel" | "playlist";
 
@@ -47,17 +89,18 @@ export function isChannelUrl(pathname: string): boolean {
 
 /**
  * Checks whether a pathname and query correspond to a YouTube playlist.
+ * Matches both standard playlist URLs (/playlist?list=...) and watch pages with a playlist (/watch?v=...&list=...).
  */
 export function isPlaylistUrl(pathname: string, search: string): boolean {
-  if (!pathname.startsWith("/playlist")) {
-    return false;
+  if (pathname.startsWith("/playlist") || pathname.startsWith("/watch")) {
+    try {
+      const params = new URLSearchParams(search);
+      return params.has("list");
+    } catch {
+      return search.includes("list=");
+    }
   }
-  try {
-    const params = new URLSearchParams(search);
-    return params.has("list");
-  } catch {
-    return search.includes("list=");
-  }
+  return false;
 }
 
 /**
@@ -123,6 +166,19 @@ export function findTargetContainer(
         if (el.closest("#masthead") || el.closest("ytd-masthead")) {
           continue;
         }
+        if (
+          el.closest("[hidden]") ||
+          el.closest("ytd-page-manager > [hidden]")
+        ) {
+          continue;
+        }
+        if (
+          type === "channel" &&
+          (el.closest("ytd-watch-flexy") ||
+            el.closest("ytd-playlist-panel-renderer"))
+        ) {
+          continue;
+        }
         return el;
       }
     }
@@ -130,7 +186,6 @@ export function findTargetContainer(
 
   return null;
 }
-
 
 /**
  * Constructs the styled Transcribe button element.
@@ -159,22 +214,27 @@ export function createTranscribeButton(
   button.style.fontSize = "14px";
   button.style.fontWeight = "500";
   button.style.lineHeight = "36px";
-  button.style.backgroundColor =
-    "var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.1))";
-  button.style.color = "var(--yt-spec-text-primary, #ffffff)";
+  button.style.backgroundColor = "#cc0000";
+  button.style.color = "#ffffff";
   button.style.verticalAlign = "middle";
-  button.style.marginLeft = "8px";
-  button.style.marginRight = "8px";
-  button.style.transition = "background-color 0.2s ease, transform 0.1s ease";
+  button.style.margin = "6px 8px";
+  button.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.2)";
+  button.style.zIndex = "999";
+  button.style.position = "relative";
+  button.style.transition = "background-color 0.15s ease, transform 0.1s ease";
   button.style.flexShrink = "0";
 
   button.addEventListener("mouseenter", () => {
-    button.style.backgroundColor =
-      "var(--yt-spec-button-chip-background-hover, rgba(255, 255, 255, 0.2))";
+    button.style.backgroundColor = "#b30000";
   });
   button.addEventListener("mouseleave", () => {
-    button.style.backgroundColor =
-      "var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.1))";
+    button.style.backgroundColor = "#cc0000";
+  });
+  button.addEventListener("mousedown", () => {
+    button.style.transform = "scale(0.96)";
+  });
+  button.addEventListener("mouseup", () => {
+    button.style.transform = "scale(1)";
   });
 
   const svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -258,12 +318,16 @@ export function injectTranscribeButton(
     }, doc);
 
     targetContainer.appendChild(button);
+    console.log(
+      "[YT Bulk Transcripts] Injected Transcribe button into:",
+      targetContainer.tagName,
+      targetContainer.id ? `#${targetContainer.id}` : targetContainer.className
+    );
     return button;
   } finally {
     isInjecting = false;
   }
 }
-
 
 /**
  * Initializes SPA navigation monitoring and button injection.
@@ -339,12 +403,14 @@ export function initButtonInjection(
     }
     observerTimeout = setTimeout(() => {
       stopObserver();
-    }, 7000);
+    }, 20000);
   };
 
   const attemptInjection = (): void => {
     const currentUrl = win.location?.href ?? "";
     const urlCheck = isTargetPage(currentUrl);
+
+    console.log("[YT Bulk Transcripts] URL check:", currentUrl, urlCheck);
 
     if (!urlCheck.isMatch) {
       cleanupTranscribeButton(doc);
@@ -357,10 +423,12 @@ export function initButtonInjection(
       injectTranscribeButton(doc, urlCheck.type);
       stopObserver();
     } else {
+      console.log(
+        "[YT Bulk Transcripts] Container not ready yet, starting observer..."
+      );
       startObserver();
     }
   };
-
 
   const onNavigateFinish = (): void => {
     attemptInjection();

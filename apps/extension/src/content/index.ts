@@ -78,4 +78,3 @@ export {
   onPanelToggle,
   _resetPanelStateForTesting,
 };
-

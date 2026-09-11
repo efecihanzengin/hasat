@@ -8,6 +8,7 @@ import {
   isCancelJobMessage,
   isGetJobStatusMessage,
   isPingMessage,
+  isResumeJobMessage,
   isStartJobMessage,
   YTE_LIVENESS_PORT,
   type ServiceWorkerResponse,
@@ -24,7 +25,10 @@ const storage = new ChromeJobStorage();
 export const jobManager = new JobManager({ storage });
 (globalThis as unknown as { jobManager: JobManager }).jobManager = jobManager;
 
-function toExtractionError(err: unknown, fallbackMessage: string): ExtractionError {
+function toExtractionError(
+  err: unknown,
+  fallbackMessage: string
+): ExtractionError {
   if (
     typeof err === "object" &&
     err !== null &&
@@ -81,6 +85,19 @@ export function createMessageRouter(manager: JobManager) {
           sendResponse({
             ok: false,
             error: toExtractionError(err, "Failed to get job status"),
+          });
+        });
+      return true;
+    }
+
+    if (isResumeJobMessage(message)) {
+      manager
+        .resumeJob(message.payload)
+        .then((job) => sendResponse({ ok: true, data: job }))
+        .catch((err: unknown) => {
+          sendResponse({
+            ok: false,
+            error: toExtractionError(err, "Failed to resume job"),
           });
         });
       return true;

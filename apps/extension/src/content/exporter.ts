@@ -93,8 +93,7 @@ export async function exportJobZip(
   const sanitizedTitle = sanitizeFilename(resolvedChannelTitle);
   const filename = `${sanitizedTitle || "youtube-transcripts"}-export.zip`;
 
-  const targetDoc =
-    doc ?? (typeof document !== "undefined" ? document : null);
+  const targetDoc = doc ?? (typeof document !== "undefined" ? document : null);
 
   if (targetDoc?.createElement && targetDoc.body?.appendChild) {
     const anchor = targetDoc.createElement("a");

@@ -9,10 +9,7 @@ export default defineConfig(({ mode }) => ({
     crx({
       manifest,
       contentScripts: {
-        standaloneFiles: [
-          "src/content/index.ts",
-          "src/content/main-world.ts",
-        ],
+        standaloneFiles: ["src/content/index.ts", "src/content/main-world.ts"],
       },
     }),
   ],
@@ -25,4 +22,3 @@ export default defineConfig(({ mode }) => ({
     outDir: "dist",
   },
 }));
-

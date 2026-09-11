@@ -66,7 +66,9 @@ describe("Shadow DOM Shell (In-Page Panel Drawer)", () => {
 
     const mount = ensureMountPoint(mockDoc as unknown as Document);
 
-    expect(getShadowRoot(mockDoc as unknown as Document)).toBe(mount.shadowRoot);
+    expect(getShadowRoot(mockDoc as unknown as Document)).toBe(
+      mount.shadowRoot
+    );
     expect(getMountPoint(mockDoc as unknown as Document)).toBe(mount.root);
   });
 
@@ -75,7 +77,10 @@ describe("Shadow DOM Shell (In-Page Panel Drawer)", () => {
     const unsubscribe = onPanelToggle(listenerSpy);
 
     const windowListenerSpy = vi.fn();
-    mockWin.addEventListener(TOGGLE_EVENT_NAME, windowListenerSpy as EventListener);
+    mockWin.addEventListener(
+      TOGGLE_EVENT_NAME,
+      windowListenerSpy as EventListener
+    );
 
     expect(isPanelOpen()).toBe(false);
 

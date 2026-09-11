@@ -10,17 +10,14 @@ import type {
 export const YTE_LIVENESS_PORT = "yte-liveness-port" as const;
 
 export type JobStatus =
-  | "idle"
-  | "running"
-  | "completed"
-  | "cancelled"
-  | "failed";
+  "idle" | "running" | "completed" | "cancelled" | "failed" | "paused";
 
 export type JobSummary = {
   total: number;
   done: number;
   skipped: number;
   failed: number;
+  cached?: number;
 };
 
 export type JobState = {
@@ -36,6 +33,7 @@ export type JobState = {
   createdAt: number;
   completedAt?: number;
   error?: string;
+  context?: YouTubeContext;
 };
 
 export type StartJobPayload = {
@@ -73,6 +71,15 @@ export type GetJobStatusMessage = {
   payload?: GetJobStatusPayload;
 };
 
+export type ResumeJobPayload = {
+  jobId?: string;
+};
+
+export type ResumeJobMessage = {
+  type: "RESUME_JOB";
+  payload?: ResumeJobPayload;
+};
+
 export type PingMessage = {
   type: "PING";
 };
@@ -81,11 +88,11 @@ export type ServiceWorkerMessage =
   | StartJobMessage
   | CancelJobMessage
   | GetJobStatusMessage
+  | ResumeJobMessage
   | PingMessage;
 
 export type ServiceWorkerResponse<T = unknown> =
-  | { ok: true; data: T }
-  | { ok: false; error: ExtractionError };
+  { ok: true; data: T } | { ok: false; error: ExtractionError };
 
 export type JobProgressEvent = {
   type: "JOB_PROGRESS";
@@ -109,6 +116,12 @@ export type JobFailedEvent = {
   error: string;
 };
 
+export type JobPausedEvent = {
+  type: "JOB_PAUSED";
+  job: JobState;
+  message?: string;
+};
+
 export type PongEvent = {
   type: "PONG";
 };
@@ -118,6 +131,7 @@ export type JobPortEvent =
   | JobCompletedEvent
   | JobCancelledEvent
   | JobFailedEvent
+  | JobPausedEvent
   | PongEvent;
 
 function isRecord(val: unknown): val is Record<string, unknown> {
@@ -154,8 +168,20 @@ export function isCancelJobMessage(val: unknown): val is CancelJobMessage {
   return true;
 }
 
-export function isGetJobStatusMessage(val: unknown): val is GetJobStatusMessage {
+export function isGetJobStatusMessage(
+  val: unknown
+): val is GetJobStatusMessage {
   if (!isRecord(val) || val.type !== "GET_JOB_STATUS") {
+    return false;
+  }
+  if (val.payload !== undefined && !isRecord(val.payload)) {
+    return false;
+  }
+  return true;
+}
+
+export function isResumeJobMessage(val: unknown): val is ResumeJobMessage {
+  if (!isRecord(val) || val.type !== "RESUME_JOB") {
     return false;
   }
   if (val.payload !== undefined && !isRecord(val.payload)) {
@@ -175,6 +201,7 @@ export function isServiceWorkerMessage(
     isStartJobMessage(val) ||
     isCancelJobMessage(val) ||
     isGetJobStatusMessage(val) ||
+    isResumeJobMessage(val) ||
     isPingMessage(val)
   );
 }

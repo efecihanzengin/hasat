@@ -14,7 +14,9 @@ export type DetectedSource = {
  * Extracts a numeric video count from arbitrary text strings like "533 videos", "42 video", "1,200 videos".
  */
 export function parseVideoCountText(text: string): number | undefined {
-  const match = text.replace(/,/g, "").match(/(\d+)\s*(?:video|videolar|vidéo)/i);
+  const match = text
+    .replace(/,/g, "")
+    .match(/(\d+)\s*(?:video|videolar|vidéo)/i);
   if (match && match[1]) {
     return parseInt(match[1], 10);
   }
@@ -31,7 +33,9 @@ export function detectSourceMetadata(
 ): DetectedSource {
   const href =
     currentUrl ??
-    (typeof window !== "undefined" && window.location ? window.location.href : "");
+    (typeof window !== "undefined" && window.location
+      ? window.location.href
+      : "");
   const target = isTargetPage(href);
   const type: DetectedSourceType = target.type ?? "channel";
 
@@ -42,7 +46,14 @@ export function detectSourceMetadata(
 
     if (!title && doc.querySelector) {
       const el =
-        doc.querySelector("ytd-playlist-header-renderer .metadata-wrapper #title") ??
+        doc.querySelector(
+          "ytd-playlist-panel-renderer #header-description h3"
+        ) ??
+        doc.querySelector("ytd-playlist-panel-renderer .title") ??
+        doc.querySelector("yt-page-header-renderer h1") ??
+        doc.querySelector(
+          "ytd-playlist-header-renderer .metadata-wrapper #title"
+        ) ??
         doc.querySelector("ytd-playlist-header-renderer h1") ??
         doc.querySelector(".metadata-action-bar h1");
       if (el?.textContent?.trim()) {
@@ -52,6 +63,14 @@ export function detectSourceMetadata(
 
     if (estimatedCount === undefined && doc.querySelector) {
       const countEl =
+        doc.querySelector(
+          "ytd-playlist-panel-renderer .index-message-wrapper"
+        ) ??
+        doc.querySelector(
+          "yt-page-header-renderer .yt-content-metadata-view-model-wiz"
+        ) ??
+        doc.querySelector("ytd-playlist-sidebar-renderer #stats") ??
+        doc.querySelector("ytd-playlist-sidebar-renderer .metadata-stats") ??
         doc.querySelector("ytd-playlist-header-renderer .metadata-stats") ??
         doc.querySelector("ytd-playlist-header-renderer #stats");
       if (countEl?.textContent) {
@@ -91,8 +110,9 @@ export function detectSourceMetadata(
   if (!handle) {
     if (doc.querySelector) {
       const handleEl =
-        doc.querySelector("yt-page-header-renderer .yt-content-metadata-view-model-wiz__delimiter")
-          ?.previousElementSibling ??
+        doc.querySelector(
+          "yt-page-header-renderer .yt-content-metadata-view-model-wiz__delimiter"
+        )?.previousElementSibling ??
         doc.querySelector("#channel-tagline") ??
         doc.querySelector("#channel-handle");
       if (handleEl?.textContent?.trim()?.startsWith("@")) {

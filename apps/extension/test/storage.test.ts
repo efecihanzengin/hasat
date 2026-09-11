@@ -74,6 +74,27 @@ describe("storage", () => {
       expect(await storage.getActiveJobId()).toBeNull();
       expect(await storage.getTranscript("job-123", "v1")).toBeNull();
     });
+
+    it("saves and retrieves transcripts from transcript cache", async () => {
+      await storage.saveCachedTranscript("v1", "en", mockTranscript);
+      const cached = await storage.getCachedTranscript("v1", "en");
+      expect(cached).toEqual(mockTranscript);
+      expect(await storage.getCachedTranscript("v1", "tr")).toBeNull();
+      expect(await storage.getCachedTranscript("unknown", "en")).toBeNull();
+    });
+
+    it("does not clear transcript cache when clearing job", async () => {
+      await storage.saveJob(mockJob);
+      await storage.saveTranscript("job-123", "v1", mockTranscript);
+      await storage.saveCachedTranscript("v1", "en", mockTranscript);
+
+      await storage.clearJob("job-123");
+
+      expect(await storage.getTranscript("job-123", "v1")).toBeNull();
+      expect(await storage.getCachedTranscript("v1", "en")).toEqual(
+        mockTranscript
+      );
+    });
   });
 
   describe("ChromeJobStorage", () => {
@@ -157,6 +178,28 @@ describe("storage", () => {
       expect(
         mockStore[formatTranscriptStorageKey("job-123", "v1")]
       ).toBeUndefined();
+    });
+
+    it("saves and retrieves transcripts from chrome.storage.local cache", async () => {
+      await storage.saveCachedTranscript("v1", "auto", mockTranscript);
+      const cached = await storage.getCachedTranscript("v1", "auto");
+      expect(cached).toEqual(mockTranscript);
+      expect(await storage.getCachedTranscript("v1", "es")).toBeNull();
+    });
+
+    it("preserves cache in chrome.storage.local when clearing job data", async () => {
+      await storage.saveJob(mockJob);
+      await storage.saveTranscript("job-123", "v1", mockTranscript);
+      await storage.saveCachedTranscript("v1", "auto", mockTranscript);
+
+      await storage.clearJob("job-123");
+
+      expect(
+        mockStore[formatTranscriptStorageKey("job-123", "v1")]
+      ).toBeUndefined();
+      expect(await storage.getCachedTranscript("v1", "auto")).toEqual(
+        mockTranscript
+      );
     });
   });
 });

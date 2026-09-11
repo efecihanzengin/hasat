@@ -42,13 +42,15 @@ describe("executeWith429Retry", () => {
     });
 
     let calls = 0;
-    const op = vi.fn(async (attempt: number): Promise<RetryableOperationResult<string>> => {
-      calls += 1;
-      if (attempt < 2) {
-        return { type: "rate_limited" };
+    const op = vi.fn(
+      async (attempt: number): Promise<RetryableOperationResult<string>> => {
+        calls += 1;
+        if (attempt < 2) {
+          return { type: "rate_limited" };
+        }
+        return { type: "success", value: "recovered" };
       }
-      return { type: "success", value: "recovered" };
-    });
+    );
 
     const result = await executeWith429Retry(op, {
       delayFn: mockDelay,

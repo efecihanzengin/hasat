@@ -82,15 +82,13 @@ export async function collectVideos(
   };
 
   const initialContinuationToken =
-    context.playlist?.continuationToken ??
-    context.videosTab?.continuationToken;
+    context.playlist?.continuationToken ?? context.videosTab?.continuationToken;
 
   const browseId = context.videosTab?.browseId;
   const params = context.videosTab?.params;
 
   // Pre-seed with initial videos already present in context (e.g. playlist browse response)
-  const initialBatch =
-    context.playlist?.initialVideos ?? context.initialVideos;
+  const initialBatch = context.playlist?.initialVideos ?? context.initialVideos;
   if (initialBatch && initialBatch.length > 0) {
     addPageVideos(initialBatch);
   }
@@ -137,7 +135,9 @@ export async function collectVideos(
         });
 
         if (!response.ok) {
-          throw new Error(`InnerTube browse failed with status ${response.status}`);
+          throw new Error(
+            `InnerTube browse failed with status ${response.status}`
+          );
         }
 
         return response.json();

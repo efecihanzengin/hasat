@@ -52,4 +52,5 @@ export type PanelViewState =
   | "running"
   | "completed"
   | "cancelled"
-  | "failed";
+  | "failed"
+  | "paused";

@@ -12,6 +12,7 @@ export type CreateManifestOptions = {
   channelOrPlaylist?: string;
   generatedAt?: string;
   filenames?: Map<string, string> | Record<string, string>;
+  cachedCount?: number;
 };
 
 /**
@@ -25,6 +26,7 @@ export function createManifest(
   let exported = 0;
   let skipped = 0;
   let failed = 0;
+  let cached = 0;
 
   const manifestItems: ManifestItem[] = items.map((item, index) => {
     const itemIndex = index + 1;
@@ -61,6 +63,11 @@ export function createManifest(
       status: item.status,
     };
 
+    if (item.fromCache) {
+      cached++;
+      manifestItem.fromCache = true;
+    }
+
     if (filename !== undefined) {
       manifestItem.filename = filename;
     }
@@ -80,6 +87,7 @@ export function createManifest(
     exported,
     skipped,
     failed,
+    cached: options?.cachedCount !== undefined ? options.cachedCount : cached,
   };
 
   const manifest: ExportManifest = {

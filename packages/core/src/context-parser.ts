@@ -187,13 +187,18 @@ export function extractPlaylistMetadata(
   let videoCount: number | undefined;
   let author: string | undefined;
 
-  // 1. Search for playlistHeaderRenderer or playlistMetadataRenderer
+  // 1. Search for playlistHeaderRenderer, playlistMetadataRenderer, or watch-page playlist panels
   const headerNodes = findNodesWithKeys(
     payload,
-    (k) =>
+    (k, val) =>
       k === "playlistHeaderRenderer" ||
       k === "playlistMetadataRenderer" ||
-      k === "microformatDataRenderer",
+      k === "microformatDataRenderer" ||
+      k === "playlistSidebarPrimaryInfoRenderer" ||
+      k === "pageHeaderRenderer" ||
+      (typeof val.playlistId === "string" &&
+        (typeof val.totalVideos === "number" ||
+          typeof val.totalVideosText !== "undefined")),
     maxDepth
   );
 
@@ -217,6 +222,31 @@ export function extractPlaylistMetadata(
           videoCount = parseInt(match[0], 10);
         }
       }
+    } else if (key === "playlistSidebarPrimaryInfoRenderer") {
+      if (videoCount === undefined && Array.isArray(val.stats)) {
+        for (const stat of val.stats) {
+          const text = extractTextFromTitle(stat);
+          const match = text
+            .replace(/,/g, "")
+            .match(/(\d+)\s*(?:video|videolar|vidéo)/i);
+          if (match && match[1]) {
+            videoCount = parseInt(match[1], 10);
+            break;
+          }
+        }
+      }
+    } else if (key === "pageHeaderRenderer") {
+      if (!title) {
+        if (typeof val.pageTitle === "string" && val.pageTitle.trim()) {
+          title = val.pageTitle.trim();
+        } else if (
+          isRecord(val.content) &&
+          isRecord(val.content.pageHeaderViewModel)
+        ) {
+          const t = extractTextFromTitle(val.content.pageHeaderViewModel.title);
+          if (t) title = t;
+        }
+      }
     } else if (key === "playlistMetadataRenderer") {
       if (!title && typeof val.title === "string") {
         title = val.title;
@@ -229,6 +259,37 @@ export function extractPlaylistMetadata(
         const listMatch = /[?&]list=([^&#]+)/.exec(val.urlCanonical);
         if (listMatch && listMatch[1]) {
           playlistId = listMatch[1];
+        }
+      }
+    } else if (
+      typeof val.playlistId === "string" &&
+      (typeof val.totalVideos === "number" ||
+        typeof val.totalVideosText !== "undefined")
+    ) {
+      if (!playlistId) {
+        playlistId = val.playlistId;
+      }
+      if (!title) {
+        const t = extractTextFromTitle(val.title ?? val.titleText);
+        if (t.length > 0) title = t;
+      }
+      if (!author) {
+        const a = extractTextFromTitle(
+          val.ownerName ?? val.shortBylineText ?? val.longBylineText
+        );
+        if (a.length > 0) author = a;
+      }
+      if (videoCount === undefined) {
+        if (typeof val.totalVideos === "number") {
+          videoCount = val.totalVideos;
+        } else {
+          const countText = extractTextFromTitle(
+            val.totalVideosText ?? val.videoCountText
+          );
+          const match = countText.replace(/,/g, "").match(/\d+/);
+          if (match) {
+            videoCount = parseInt(match[0], 10);
+          }
         }
       }
     }

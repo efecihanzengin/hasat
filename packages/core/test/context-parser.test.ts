@@ -194,6 +194,49 @@ describe("extractPlaylistMetadata", () => {
     });
   });
 
+  it("extracts playlist metadata and initial videos from watch page payload", () => {
+    const mockWatchPayload = {
+      contents: {
+        twoColumnWatchNextResults: {
+          playlist: {
+            playlist: {
+              title: "Watch Page Homelab",
+              playlistId: "PL_WATCH_123",
+              totalVideos: 10,
+              ownerName: { simpleText: "Test Creator" },
+              contents: [
+                {
+                  playlistPanelVideoRenderer: {
+                    videoId: "panel_vid_1",
+                    title: { simpleText: "First Panel Video" },
+                  },
+                },
+                {
+                  playlistPanelVideoRenderer: {
+                    videoId: "panel_vid_2",
+                    title: { simpleText: "Second Panel Video" },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+    };
+
+    const result = extractPlaylistMetadata(mockWatchPayload);
+    expect(result).not.toBeNull();
+    expect(result?.playlistId).toBe("PL_WATCH_123");
+    expect(result?.title).toBe("Watch Page Homelab");
+    expect(result?.videoCount).toBe(10);
+    expect(result?.author).toBe("Test Creator");
+    expect(result?.initialVideos).toHaveLength(2);
+    expect(result?.initialVideos?.[0]).toEqual({
+      videoId: "panel_vid_1",
+      title: "First Panel Video",
+    });
+  });
+
   it("returns null for invalid payload", () => {
     expect(extractPlaylistMetadata(null)).toBeNull();
     expect(extractPlaylistMetadata({})).toBeNull();
