@@ -152,3 +152,34 @@ export type BuildTranscriptArchiveResult = {
   zipData: Uint8Array;
   manifest: ExportManifest;
 };
+
+export type VideoItem = {
+  videoId: string;
+  title: string;
+};
+
+export type AbortSignalLike = {
+  readonly aborted: boolean;
+};
+
+export type FetchContinuationFn = (
+  token: string,
+  signal?: AbortSignalLike
+) => Promise<unknown>;
+
+export type FetchBrowsePageFn = (request: {
+  browseId?: string;
+  continuationToken?: string;
+  signal?: AbortSignalLike;
+}) => Promise<unknown>;
+
+export type EnumerateVideosOptions = {
+  browseId?: string;
+  initialData?: unknown;
+  initialContinuationToken?: string;
+  fetchContinuation?: FetchContinuationFn;
+  fetchPage?: FetchBrowsePageFn;
+  maxDepth?: number;
+  maxPages?: number;
+  signal?: AbortSignalLike;
+};
