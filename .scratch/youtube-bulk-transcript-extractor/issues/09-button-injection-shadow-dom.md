@@ -5,13 +5,14 @@ A resilient content script module in `apps/extension` that monitors YouTube's Si
 
 **Blocked by:** 07 (Main World Context Extraction Bridge)
 
-**Status:** ready-for-agent
+**Status:** completed
 
 ## Acceptance Criteria
 
-- [ ] Navigation listener subscribing to YouTube's `yt-navigate-finish` event.
-- [ ] Reliable element detection for injection targets on channel headers (`#buttons`) and playlist headers (`.metadata-action-bar`).
-- [ ] Idempotent injection: "Transcribe" button is never duplicated on repeated or rapid SPA route transitions.
-- [ ] Mount point creation: attaches an isolated Shadow DOM container to `document.body` for the In-Page Panel.
-- [ ] Button click dispatches toggle event to open/close the In-Page Panel inside the Shadow DOM.
-- [ ] DOM cleanup on route changes away from channel/playlist pages.
+- [x] Navigation listener subscribing to YouTube's `yt-navigate-finish` event.
+- [x] Reliable element detection for injection targets on channel headers (`#buttons`) and playlist headers (`.metadata-action-bar`).
+- [x] Idempotent injection: "Transcribe" button is never duplicated on repeated or rapid SPA route transitions.
+- [x] Mount point creation: attaches an isolated Shadow DOM container to `document.body` for the In-Page Panel.
+- [x] Button click dispatches toggle event to open/close the In-Page Panel inside the Shadow DOM.
+- [x] DOM cleanup on route changes away from channel/playlist pages.
+
