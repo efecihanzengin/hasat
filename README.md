@@ -1,171 +1,123 @@
-# YouTube Bulk Transcript Extractor
+# hasat
 
-A Chrome Manifest V3 extension that extracts transcripts in bulk from every video in a YouTube channel or playlist and exports them as **TXT**, **JSON**, **CSV**, **SRT**, **VTT**, or **Markdown** inside a single `.zip` package with a structured `manifest.json`.
+Harvest every transcript from a YouTube channel or playlist, straight from your own browser.
 
----
+[Formats](#output) · [Install](#install) · [How it works](#how-it-works) · [Limits](#limits)
 
-## Architecture & Design Principles
+Transcript tools tend to work beautifully on your laptop and die the moment you deploy them. YouTube blocks most datacenter IP ranges, so a server-side fetcher starts returning IpBlocked and 429 on day one — which is why the paid services in this space are really selling a rotating residential proxy pool with a nice UI in front of it.
 
-Per **SPEC §1**, transcripts **must be fetched from the user's browser, not from an external server**:
-- **Zero Datacenter/Proxy Blocks**: YouTube aggressively blocks cloud/datacenter IP ranges and imposes proof-of-origin (PoToken) challenges. Running as an MV3 browser extension guarantees that all extraction requests originate from the user's authentic browser session and residential IP.
-- **Pure Core Library (`packages/core`)**: Zero DOM, zero `chrome.*`, zero network at module scope. Houses defensiveness-first InnerTube payload parsers, caption track selectors, transcript segment normalizers, formatters, and streaming ZIP packaging. Thoroughly covered by fixture-driven unit tests.
-- **Chrome MV3 Extension (`apps/extension`)**: Vite + CRXJS + React. Injected into YouTube channel and playlist pages, encapsulated strictly inside **Shadow DOM** to prevent CSS bleeding and styling collisions with YouTube's dynamic theme.
-- **Service Worker Lifecycle (Liveness Port)**: Long-running extractions (hundreds of videos) maintain an open `chrome.runtime.Port` between the content script and background service worker, preventing Chrome from suspending the service worker mid-job.
-- **Chunked Storage Persistence**: Transcripts are streamed to `chrome.storage.local` upon completion of each video (per ADR-0002), preventing heap exhaustion and ensuring job resumability.
+hasat sidesteps that entirely. It is a Chrome extension: the requests come from your browser, your session, your home IP. Nothing to deploy, nothing to pay for, no proxy to rotate.
 
----
-
-## Developer Setup & Build
-
-### Prerequisites
-
-- **Node.js**: >= 20.0.0
-- **pnpm**: >= 9.0.0
-- **Google Chrome**: Modern version supporting Manifest V3
-
-### Installation & Build
-
-1. Clone the repository and install dependencies:
-   ```bash
-   git clone <repo-url>
-   cd youtubetranscript
-   pnpm install
-   ```
-
-2. Run typechecking, linting, and tests:
-   ```bash
-   pnpm typecheck
-   pnpm lint
-   pnpm test
-   ```
-
-3. Build the extension for production:
-   ```bash
-   pnpm build
-   ```
-   The unpacked extension will be compiled into `apps/extension/dist/`.
-
----
-
-## Installing Unpacked Extension in Chrome
-
-1. Open Google Chrome and navigate to `chrome://extensions/`.
-2. Enable **Developer mode** using the toggle switch in the top-right corner.
-3. Click the **Load unpacked** button in the top-left toolbar.
-4. Select the directory:
-   ```
-   <repo-root>/apps/extension/dist
-   ```
-5. Confirm that **YouTube Bulk Transcript Extractor** appears in your extensions list and is active.
-
----
-
-## How to Use
-
-### 1. Channel Pages
-- Navigate to any YouTube channel home or videos tab:
-  - `https://www.youtube.com/@ChannelName`
-  - `https://www.youtube.com/@ChannelName/videos`
-- A red **Transcribe** button will be automatically injected into the channel header action row.
-- The extension automatically resolves the channel's "Videos" tab continuation token to enumerate full uploads rather than featured home reels.
-
-### 2. Playlist Pages
-- Navigate to any public or unlisted YouTube playlist:
-  - `https://www.youtube.com/playlist?list=...`
-- The **Transcribe** button appears cleanly in the playlist action bar alongside "Play all" and "Share".
-
-### 3. In-Page Panel (Slide-out Drawer)
-1. Click **Transcribe** to open the panel. The panel renders within an isolated Shadow DOM.
-2. Select your desired **Export Formats**:
-   - `TXT` (with optional timestamp toggle `[mm:ss]`)
-   - `JSON` (full transcript object tree)
-   - `CSV` (`start,duration,text` with RFC 4180 quoting)
-   - `SRT` (standard SubRip subtitle format)
-   - `VTT` (WebVTT subtitle format)
-   - `Markdown` (formatted heading and language metadata)
-3. Select **Preferred Language** (e.g. "Auto / Video Default", "English", "Turkish", etc.).
-4. Click **Start Extraction**.
-5. Watch real-time progress and live item status indicators:
-   - Status counters: `{done}/{total}`.
-   - Per-video status: `pending`, `fetching`, `done`, `skipped` (e.g., Live streams), or `failed` with typed error details.
-6. Once complete, click **Download (.zip)** to save the complete archive.
-
----
-
-## Output Structure & Naming Conventions
-
-The downloaded archive is named after the channel or playlist:
-`{sanitized-channel-or-playlist-title}-export.zip`
-
-### File Naming Convention
-Per **SPEC §6.1**, each transcript file inside the archive is formatted as:
 ```
-{1-based-index}-{sanitized-title}-{videoId}.{ext}
+┌ hasat ──────────────────────────────────────────────┐
+│                                                     │
+│  Lex Fridman Podcast · 447 videos                   │
+│                                                     │
+│  Formats   [x] txt  [x] json  [ ] srt  [ ] vtt      │
+│  Language  Auto (video default)                     │
+│                                                     │
+│  ────────────────────────────────────────── 118/447 │
+│                                                     │
+│  #416 Yann LeCun: Meta AI…               done       │
+│  #415 Yuval Noah Harari: Human…          done       │
+│  #414 [Members only]                     skipped    │
+│  #413 Neil Adams: Judo…                  fetching   │
+│                                                     │
+│  [ Cancel ]                            [ Download ] │
+└─────────────────────────────────────────────────────┘
 ```
-- Filenames strip illegal characters (`< > : " / \ | ? *`), collapse whitespace into hyphens (`-`), and clamp titles to 100 characters while preserving the extension.
-- Example: `001-Python-Tutorial-for-Beginners-1-Install-and-Setup-HGOBQPFzWKo.srt`
 
-### `manifest.json`
-Every archive includes a root `manifest.json` recording full metadata and execution audit details:
+- **Six formats.** TXT, JSON, CSV, SRT, VTT and Markdown, exported together as a single zip with a `manifest.json` recording what succeeded, what was skipped and why.
+- **Survives the long jobs.** Every finished transcript is written to `storage.local` immediately. Close the panel, switch tabs, reload the page — the job keeps running and nothing already fetched is lost.
+- **Fails one video at a time.** A members-only video, a live stream or a video with no captions is recorded in the manifest and the job carries on. One bad video never takes down a 400-video run.
+- **Stops when YouTube says stop.** Rate limits are treated as a signal rather than an obstacle: requests are paced and serialised, and three consecutive 429s pause the whole job instead of digging the hole deeper.
+- **Nothing leaves your machine.** No backend, no telemetry, no account. The only hosts contacted are YouTube's own.
+
+## Install
+
+Not on the Chrome Web Store. Build it and load it unpacked:
+
+```bash
+git clone https://github.com/efecihanzengin/hasat.git
+cd hasat
+pnpm install
+pnpm build
+```
+
+Then open `chrome://extensions`, turn on **Developer mode**, choose **Load unpacked**, and select `apps/extension/dist`.
+
+Open any YouTube channel or playlist and a Harvest button appears next to the page title.
+
+## Output
+
+The zip contains one file per video plus a manifest:
+
+```
+hasat-lex-fridman-2026-09-11.zip
+├── 001-Yann-LeCun-Meta-AI-dQw4w9WgXcQ.txt
+├── 002-Yuval-Noah-Harari-Human-oHg5SJYRHA0.txt
+├── …
+└── manifest.json
+```
+
 ```json
 {
-  "version": "1.0",
-  "generatedAt": "2026-09-11T11:00:00.000Z",
-  "summary": {
-    "total": 158,
-    "exported": 150,
-    "skipped": 5,
-    "failed": 3
+  "source": {
+    "type": "channel",
+    "name": "Lex Fridman Podcast",
+    "videoCount": 447
   },
-  "channelOrPlaylist": "Python Tutorials",
+  "exported": 412,
+  "skipped": 32,
+  "failed": 3,
   "items": [
     {
-      "index": 1,
-      "videoId": "HGOBQPFzWKo",
-      "title": "Python Tutorial for Beginners 1: Install and Setup",
-      "status": "done",
-      "filename": "1-Python-Tutorial-for-Beginners-1-Install-and-Setup-HGOBQPFzWKo.txt"
+      "videoId": "dQw4w9WgXcQ",
+      "title": "Yann LeCun: Meta AI…",
+      "status": "done"
     },
     {
-      "index": 2,
-      "videoId": "exampleId",
-      "title": "Music Video Without Subtitles",
-      "status": "failed",
-      "error": {
-        "code": "NO_CAPTIONS",
-        "message": "No transcript available"
-      }
+      "videoId": "oHg5SJYRHA0",
+      "title": "…",
+      "status": "skipped",
+      "error": "NO_CAPTIONS"
     }
   ]
 }
 ```
 
----
+## How it works
 
-## Error Taxonomy
+A content script reads YouTube's own InnerTube configuration from the page, then walks the browse endpoint's continuation tokens to enumerate the channel or playlist. Each video's caption track is fetched as json3 and normalised into timed segments. The service worker owns the queue; the content script owns the export.
 
-Failures are strongly typed and never crash the queue:
+Two consequences worth knowing about. The extension only works while a YouTube tab is open, because that tab is what makes the requests legitimate. And caption tracks are whatever YouTube actually has — a manually written track when one exists, an auto-generated one otherwise, with the quality difference that implies.
 
-| Code | Cause | Behavior |
-|---|---|---|
-| `NO_CAPTIONS` | Video does not have captions/subtitles in any track | Recorded in manifest; job continues smoothly |
-| `PRIVATE_OR_MEMBERS` | Video is private, deleted, or members-only | Flagged in manifest; job proceeds to next item |
-| `AGE_RESTRICTED` | Sign-in or age verification required | Flagged in manifest; job proceeds |
-| `LIVE_STREAM` | Video is an active ongoing livestream | Automatically `skipped`; job proceeds |
-| `RATE_LIMITED` | HTTP 429 received after exponential retries | Marked `failed`; job preserves all earlier successes |
-| `PARSE_ERROR` | Unexpected InnerTube schema change | Logs raw response to console; marks item failed |
-| `UNKNOWN` | Network drop or other unexpected exception | Logged and handled gracefully |
+## Limits
 
----
+- **Chrome and Chromium only.** Manifest V3, no Firefox port.
+- **YouTube will rate-limit you.** Pacing is deliberately conservative; a 400-video channel takes ten minutes or so. If you hit 429, wait fifteen minutes — a VPN just moves the problem to a new IP.
+- **No private, members-only or age-restricted videos.** They are recorded as skipped.
+- **Live streams are skipped while still live.**
+- **Response shapes change without warning.** When YouTube reshuffles something, the raw payload is logged to the extension console — that log is the first place to look.
 
-## Known Limitations & Best Practices
+## Development
 
-1. **Residential IP & Bot Protection**:
-   - Extractions must run in a real desktop Chrome browser with standard user navigation.
-   - Headless or datacenter environments without genuine user profiles will be challenged by Google's automated query detection (HTTP 429 / CAPTCHA).
-2. **Active Browser Tab Requirement**:
-   - The YouTube tab hosting the extraction panel must remain open while a bulk job is running.
-   - Closing the tab severs the Liveness Port connection and stops worker orchestration.
-3. **Pacing and Concurrency Ceiling**:
-   - Concurrency is capped at 3 concurrent workers (with 250–500ms jittered intervals) to protect your IP from triggering YouTube's rate limiters.
-   - If HTTP 429 is encountered, the extension uses exponential backoff (1s, 2s, 4s, 8s) up to 4 retries before gracefully marking the video rate-limited.
+```bash
+pnpm typecheck && pnpm lint && pnpm test # everything, fixture-driven, no network
+pnpm build                               # unpacked extension → apps/extension/dist
+```
+
+| Component | Description |
+|---|---|
+| `packages/core` | pure TypeScript — parsing, formatters, enumeration |
+| `apps/extension` | MV3 service worker, content script, panel UI |
+
+`packages/core` has no DOM and no `chrome.*` types, enforced by its `tsconfig` rather than by convention. Parser tests run against captured real InnerTube payloads in `packages/core/fixtures/`, with credentials stripped.
+
+## Legal
+
+Not affiliated with, endorsed by or sponsored by YouTube or Google. YouTube's Terms of Service restrict downloading content; this is a personal research tool and using it is your call.
+
+## License
+
+MIT
