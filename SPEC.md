@@ -34,9 +34,10 @@ If a task seems to require a server, stop and ask. Do not introduce one.
 - TypeScript, strict mode. No `any` in committed code.
 - pnpm workspaces monorepo.
 - `packages/core` — pure TS library. No DOM, no `chrome.*`, no `fetch` at
-  module scope. Parsing and format conversion live here and are unit tested
-  against fixtures.
-- `apps/extension` — Chrome MV3 extension. Vite + CRXJS + React for the popup.
+  module scope. Parsing, format conversion, and zip packaging logic live here
+  and are unit tested against fixtures.
+- `apps/extension` — Chrome MV3 extension. Vite + CRXJS + React for the
+  in-page panel, content scripts, and background service worker.
 - Vitest for tests. ESLint + Prettier.
 
 ---
@@ -74,25 +75,30 @@ type JobItem = {
 Input is a channel URL (`/@handle`, `/@handle/videos`, `/channel/UC...`) or a
 playlist URL (`/playlist?list=...`).
 
-Enumeration uses YouTube's InnerTube `browse` endpoint. Read the API key and
-client version from the page context (`ytcfg` / `INNERTUBE_API_KEY`,
-`INNERTUBE_CLIENT_VERSION`) rather than hardcoding them — they rotate.
-
-Results are paginated via continuation tokens. Follow continuations until
-exhausted. A large channel can exceed 1000 videos; the enumerator must be a
-generator/async-iterator that yields pages, not a function that buffers
-everything before returning.
-
-Hardcoding a response shape from a single observed payload is the most likely
-failure here. Parse defensively: locate `videoRenderer` / `playlistVideoRenderer`
-nodes by walking the object tree, not by fixed index paths.
+Enumeration uses YouTube's InnerTube `browse` endpoint.
+- Read the API key and client version from the page context (`ytcfg` /
+  `INNERTUBE_API_KEY`, `INNERTUBE_CLIENT_VERSION`) rather than hardcoding them.
+  Because MV3 content scripts run in an isolated world, the content script
+  evaluates a small snippet in the main world (`world: "MAIN"`) to extract
+  `ytcfg` and the initial "Videos" tab token from `ytInitialData`.
+- For channel pages, resolve the "Videos" tab token to target video uploads
+  rather than the "Home" tab.
+- Results are paginated via continuation tokens. Follow continuations until
+  exhausted. A large channel can exceed 1000 videos; the enumerator must be a
+  generator/async-iterator that yields pages, not a function that buffers
+  everything before returning.
+- Parse defensively: locate `videoRenderer` / `playlistVideoRenderer` nodes by
+  walking the object tree, not by fixed index paths.
 
 ### 4.2 Fetch one transcript
 
 1. Call the InnerTube `player` endpoint for the videoId.
 2. Read `captions.playerCaptionsTracklistRenderer.captionTracks`.
-3. Track selection order: user-selected language → manually created track in
-   the video's default language → auto-generated track → first available.
+3. Track selection order:
+   - User-selected preferred language (or video default if set to Auto)
+   - Manually created track in the video's default language
+   - Auto-generated track in the preferred/default language
+   - First available caption track
 4. Fetch the track `baseUrl` with `&fmt=json3` appended. Parse `events[]` into
    `Segment[]`. Drop events with no `segs`. Concatenate `segs[].utf8`.
 5. Normalize: unescape HTML entities, collapse runs of whitespace, trim,
@@ -128,7 +134,7 @@ debugging. It must never crash the job.
 
 ---
 
-## 6. Export formats
+## 6. Export formats and Storage
 
 All formatters are pure functions in `packages/core`:
 `(t: Transcript, opts) => string`.
@@ -148,38 +154,60 @@ Timestamp formatting is the highest-risk area for off-by-one bugs. It needs
 dedicated unit tests covering: 0s, sub-second values, values crossing a minute
 boundary, values crossing an hour boundary, and durations over 10 hours.
 
-**Bulk export:** a single `.zip` containing one file per video, named
-`{index}-{sanitized-title}-{videoId}.{ext}`. Sanitization strips characters
-illegal on Windows (`< > : " / \ | ? *`), collapses whitespace to `-`, and
-truncates to 100 characters while preserving the extension. Include a
-`manifest.json` listing every item with its final status and error code.
+### 6.1 State Persistence and Bulk Export
+
+- **Chunked Storage Persistence:** As each video finishes extraction, its
+  transcript is written immediately to `chrome.storage.local` (per ADR-0002).
+  The Service Worker maintains the job item status list. This avoids holding
+  hundreds of full transcripts in volatile memory and prevents data loss if a tab
+  is reloaded mid-job.
+- **Bulk Export:** A single `.zip` containing one file per video, named
+  `{index}-{sanitized-title}-{videoId}.{ext}`. Sanitization strips characters
+  illegal on Windows (`< > : " / \ | ? *`), collapses whitespace to `-`, and
+  truncates to 100 characters while preserving the extension. Include a
+  `manifest.json` listing every item with its final status and error code.
+- **Zip Assembly:** Zip generation is executed on-demand during the export
+  action using pure JS streaming compression (`fflate`), reading items from
+  storage without ballooning heap memory.
 
 ---
 
-## 7. UI
+## 7. UI and Runtime Architecture
 
-Two surfaces.
+Two primary UI surfaces and an MV3 execution model.
 
-**Injected button** — appears on channel and playlist pages, next to the
-existing YouTube controls. Label: "Transcribe". Must survive YouTube's SPA
-navigation (YouTube does not do full page loads; use a MutationObserver or
-`yt-navigate-finish` and re-inject on route change). Must not duplicate itself
-on repeated navigation.
+### 7.1 Injected Button
+Appears on channel and playlist pages, next to the existing YouTube controls
+(channel header actions, playlist action bar).
+- Label: "Transcribe".
+- Must survive YouTube's SPA navigation (listen to `yt-navigate-finish` and
+  re-inject cleanly without duplicating).
 
-**Popup panel** — opened by the button. Shows:
-- detected source (channel/playlist name, video count)
-- format checkboxes, language selector, timestamp toggle
-- Start button
-- during a job: progress `{done}/{total}`, a scrolling list of items with
-  status, and a Cancel button
-- on completion: a Download button and a summary line
-  (`412 exported, 18 skipped, 3 failed`)
+### 7.2 In-Page Panel (Slide-out Drawer)
+Opened by clicking the "Transcribe" button. Injected into `document.body`
+encapsulated within a **Shadow DOM** to prevent YouTube styles from interfering
+with the UI and vice versa (per ADR-0001).
+- Shows:
+  - Detected source (channel/playlist title, video count)
+  - Format checkboxes (TXT, JSON, CSV, SRT, VTT, Markdown)
+  - Timestamp toggle for TXT
+  - Language selector (popular languages dropdown + "Auto / Video Default")
+  - Start button
+  - During a job: progress `{done}/{total}`, scrolling list of items with status,
+    and Cancel button
+  - On completion: Download button and summary line
+    (`412 exported, 18 skipped, 3 failed`)
+- Cancel aborts in-flight requests via `AbortController` and still enables
+  downloading whatever completed prior to cancellation.
+- Closing the panel does not terminate the job.
 
-Cancel must abort in-flight requests via `AbortController` and still offer a
-download of whatever completed.
-
-State lives in the service worker, not the popup — closing the popup must not
-kill a running job.
+### 7.3 Service Worker Lifecycle & Liveness Port
+- Extraction orchestration and queue execution run in the background Service
+  Worker.
+- To prevent Chrome from killing the Service Worker after 30 seconds of
+  inactivity during long bulk jobs (e.g. 1000+ videos taking several minutes),
+  the Content Script opens and maintains a `chrome.runtime.Port` (Liveness Port
+  per ADR-0001) with the Service Worker for the duration of the active job.
 
 ---
 
@@ -199,7 +227,7 @@ v0 is done when all of the following hold:
 5. A video without captions produces a `NO_CAPTIONS` entry in the manifest and
    does not interrupt the job.
 6. Navigating between three different channels re-injects exactly one button
-   each time.
+   each time, and the In-Page Panel opens reliably without style corruption.
 7. `README.md` documents install-unpacked steps and the known limitations.
 
 ---
