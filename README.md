@@ -1,8 +1,25 @@
-# hasat
+<h1 align="center">hasat</h1>
 
-Harvest every transcript from a YouTube channel or playlist, straight from your own browser.
+<p align="center">
+  Harvest every transcript from a YouTube channel or playlist, straight from your own browser.
+</p>
 
-[Formats](#output) · [Install](#install) · [How it works](#how-it-works) · [Limits](#limits)
+<p align="center">
+  <img alt="manifest" src="https://img.shields.io/badge/manifest-v3-e82127?labelColor=1a1a1a">
+  <a href="#output"><img alt="formats" src="https://img.shields.io/badge/formats-6-e82127?labelColor=1a1a1a"></a>
+  <img alt="tests" src="https://img.shields.io/badge/tests-254%20passing-e82127?labelColor=1a1a1a">
+  <img alt="backend" src="https://img.shields.io/badge/backend-zero%20(local)-e82127?labelColor=1a1a1a">
+  <a href="#license"><img alt="licence" src="https://img.shields.io/badge/licence-MIT-e82127?labelColor=1a1a1a"></a>
+</p>
+
+<p align="center">
+  <a href="#output">Formats</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#limits">Limits</a>
+</p>
+
+---
 
 Transcript tools tend to work beautifully on your laptop and die the moment you deploy them. YouTube blocks most datacenter IP ranges, so a server-side fetcher starts returning IpBlocked and 429 on day one — which is why the paid services in this space are really selling a rotating residential proxy pool with a nice UI in front of it.
 
