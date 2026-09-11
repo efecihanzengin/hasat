@@ -13,6 +13,23 @@ function createMockResponse(status: number, body: unknown): Response {
 }
 
 describe("fetchSingleTranscript", () => {
+  const defaultContext = { clientVersion: "2.20240313.01.00" };
+
+  it("throws error when clientVersion is missing in YouTube context", async () => {
+    await expect(
+      fetchSingleTranscript({
+        videoId: "jNQXAC9IVRw",
+      })
+    ).rejects.toThrow("Missing clientVersion in YouTube page context");
+
+    await expect(
+      fetchSingleTranscript({
+        videoId: "jNQXAC9IVRw",
+        context: { apiKey: "AIzaTestKey123" },
+      })
+    ).rejects.toThrow("Missing clientVersion in YouTube page context");
+  });
+
   it("successfully fetches player metadata and timedtext segments", async () => {
     const mockFetch = vi
       .fn<typeof fetch>()
@@ -21,6 +38,7 @@ describe("fetchSingleTranscript", () => {
 
     const result = await fetchSingleTranscript({
       videoId: "jNQXAC9IVRw",
+      context: defaultContext,
       fetchFn: mockFetch,
     });
 
@@ -56,7 +74,7 @@ describe("fetchSingleTranscript", () => {
 
     await fetchSingleTranscript({
       videoId: "no-caps",
-      context: { apiKey: "AIzaTestKey123" },
+      context: { ...defaultContext, apiKey: "AIzaTestKey123" },
       fetchFn: mockFetch,
     });
 
@@ -74,6 +92,7 @@ describe("fetchSingleTranscript", () => {
 
     const result = await fetchSingleTranscript({
       videoId: "no-caps",
+      context: defaultContext,
       fetchFn: mockFetch,
     });
 
@@ -94,6 +113,7 @@ describe("fetchSingleTranscript", () => {
 
     const result = await fetchSingleTranscript({
       videoId: "jNQXAC9IVRw",
+      context: defaultContext,
       fetchFn: mockFetch,
       delayFn: mockDelay,
     });
@@ -111,6 +131,7 @@ describe("fetchSingleTranscript", () => {
 
     const result = await fetchSingleTranscript({
       videoId: "jNQXAC9IVRw",
+      context: defaultContext,
       fetchFn: mockFetch,
       delayFn: mockDelay,
     });
@@ -131,6 +152,7 @@ describe("fetchSingleTranscript", () => {
 
     const result = await fetchSingleTranscript({
       videoId: "jNQXAC9IVRw",
+      context: defaultContext,
       fetchFn: mockFetch,
       delayFn: mockDelay,
     });
@@ -148,6 +170,7 @@ describe("fetchSingleTranscript", () => {
 
     const result = await fetchSingleTranscript({
       videoId: "fail-video",
+      context: defaultContext,
       fetchFn: mockFetch,
     });
 
@@ -169,6 +192,7 @@ describe("fetchSingleTranscript", () => {
 
     const result = await fetchSingleTranscript({
       videoId: "corrupt-video",
+      context: defaultContext,
       fetchFn: mockFetch,
     });
 
@@ -185,6 +209,7 @@ describe("fetchSingleTranscript", () => {
     const mockFetch = vi.fn<typeof fetch>();
     const result = await fetchSingleTranscript({
       videoId: "jNQXAC9IVRw",
+      context: defaultContext,
       fetchFn: mockFetch,
       signal: controller.signal,
     });

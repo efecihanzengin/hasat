@@ -47,8 +47,12 @@ export async function fetchSingleTranscript(
     };
   }
 
+  if (!context?.clientVersion) {
+    throw new Error("Missing clientVersion in YouTube page context");
+  }
+
   // 1. Fetch player endpoint with 429 retry
-  const playerEndpoint = context?.apiKey
+  const playerEndpoint = context.apiKey
     ? `https://www.youtube.com/youtubei/v1/player?key=${encodeURIComponent(
         context.apiKey
       )}&prettyPrint=false`
@@ -57,10 +61,10 @@ export async function fetchSingleTranscript(
   const playerBody = {
     context: {
       client: {
-        clientName: context?.clientName ?? "WEB",
-        clientVersion: context?.clientVersion ?? "2.20240313.01.00",
+        clientName: context.clientName ?? "WEB",
+        clientVersion: context.clientVersion,
         originalUrl: `https://www.youtube.com/watch?v=${videoId}`,
-        ...(context?.visitorData ? { visitorData: context.visitorData } : {}),
+        ...(context.visitorData ? { visitorData: context.visitorData } : {}),
       },
     },
     videoId,
@@ -95,7 +99,8 @@ export async function fetchSingleTranscript(
       try {
         const data = (await response.json()) as unknown;
         return { type: "success", value: data };
-      } catch {
+      } catch (err: unknown) {
+        console.error("Player response PARSE_ERROR: Failed to parse JSON", err);
         return {
           type: "failure",
           error: createExtractionError(
@@ -111,6 +116,12 @@ export async function fetchSingleTranscript(
   let playerParsed: ExtractionResult<ParsedPlayerResponse> | null = null;
   if (playerRetryResult.ok) {
     playerParsed = parsePlayerResponse(playerRetryResult.value);
+    if (!playerParsed.ok && playerParsed.error.code === "PARSE_ERROR") {
+      console.error(
+        "Player response PARSE_ERROR: Invalid structure",
+        playerRetryResult.value
+      );
+    }
   }
 
   // Fallback to watch page HTML if player endpoint failed with 403 (e.g. MV3 cross-origin POST)
@@ -122,6 +133,9 @@ export async function fetchSingleTranscript(
       !playerParsed.ok &&
       playerParsed.error.code === "PRIVATE_OR_MEMBERS")
   ) {
+    console.info(
+      `[Fetcher] Engaging watch page HTML fallback for video ${videoId}`
+    );
     const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
     const watchRetryResult = await executeWith429Retry<string>(
       async (): Promise<RetryableOperationResult<string>> => {
@@ -152,7 +166,8 @@ export async function fetchSingleTranscript(
         try {
           const html = await response.text();
           return { type: "success", value: html };
-        } catch {
+        } catch (err: unknown) {
+          console.error("Watch page PARSE_ERROR: Failed to read HTML", err);
           return {
             type: "failure",
             error: createExtractionError(
@@ -173,8 +188,18 @@ export async function fetchSingleTranscript(
         try {
           const parsedJson = JSON.parse(match[1]) as unknown;
           playerParsed = parsePlayerResponse(parsedJson);
-        } catch {
-          // If watch page JSON parsing fails, retain original error
+          if (!playerParsed.ok && playerParsed.error.code === "PARSE_ERROR") {
+            console.error(
+              "Watch page fallback player response PARSE_ERROR: Invalid structure",
+              parsedJson
+            );
+          }
+        } catch (err: unknown) {
+          console.error(
+            "Watch page fallback PARSE_ERROR: Failed to parse ytInitialPlayerResponse JSON",
+            match[1],
+            err
+          );
         }
       }
     } else if (!playerRetryResult.ok) {
@@ -240,7 +265,11 @@ export async function fetchSingleTranscript(
       try {
         const data = (await response.json()) as unknown;
         return { type: "success", value: data };
-      } catch {
+      } catch (err: unknown) {
+        console.error(
+          "Timedtext response PARSE_ERROR: Failed to parse JSON",
+          err
+        );
         return {
           type: "failure",
           error: createExtractionError(
@@ -260,6 +289,12 @@ export async function fetchSingleTranscript(
   // 5. Parse timedtext events and normalize segments
   const segmentsParsed = parseTimedTextJson(timedTextRetryResult.value);
   if (!segmentsParsed.ok) {
+    if (segmentsParsed.error.code === "PARSE_ERROR") {
+      console.error(
+        "Timedtext segments PARSE_ERROR: Invalid structure",
+        timedTextRetryResult.value
+      );
+    }
     return segmentsParsed;
   }
 

@@ -12,7 +12,6 @@ export interface JobStorage {
     transcript: Transcript
   ): Promise<void>;
   getTranscript(jobId: string, videoId: string): Promise<Transcript | null>;
-  getAllJobTranscripts(jobId: string): Promise<Map<string, Transcript>>;
   clearJob(jobId: string): Promise<void>;
 }
 
@@ -73,18 +72,6 @@ export class MemoryJobStorage implements JobStorage {
     const data = this.store.get(formatTranscriptStorageKey(jobId, videoId));
     if (!data) return null;
     return structuredClone(data as Transcript);
-  }
-
-  async getAllJobTranscripts(jobId: string): Promise<Map<string, Transcript>> {
-    const prefix = `transcript:${jobId}:`;
-    const result = new Map<string, Transcript>();
-    for (const [key, val] of this.store.entries()) {
-      if (key.startsWith(prefix)) {
-        const videoId = key.slice(prefix.length);
-        result.set(videoId, structuredClone(val as Transcript));
-      }
-    }
-    return result;
   }
 
   async clearJob(jobId: string): Promise<void> {
@@ -150,19 +137,6 @@ export class ChromeJobStorage implements JobStorage {
     const result = await chrome.storage.local.get(key);
     const val = result[key];
     return val ? (val as Transcript) : null;
-  }
-
-  async getAllJobTranscripts(jobId: string): Promise<Map<string, Transcript>> {
-    const all = await chrome.storage.local.get(null);
-    const prefix = `transcript:${jobId}:`;
-    const result = new Map<string, Transcript>();
-    for (const [key, val] of Object.entries(all)) {
-      if (key.startsWith(prefix) && val) {
-        const videoId = key.slice(prefix.length);
-        result.set(videoId, val as Transcript);
-      }
-    }
-    return result;
   }
 
   async clearJob(jobId: string): Promise<void> {

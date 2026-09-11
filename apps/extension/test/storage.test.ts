@@ -63,25 +63,6 @@ describe("storage", () => {
       expect(await storage.getTranscript("job-123", "unknown")).toBeNull();
     });
 
-    it("retrieves all transcripts for a job via getAllJobTranscripts", async () => {
-      await storage.saveTranscript("job-123", "v1", mockTranscript);
-      await storage.saveTranscript("job-123", "v2", {
-        ...mockTranscript,
-        videoId: "v2",
-        title: "Video 2",
-      });
-      await storage.saveTranscript("other-job", "v3", {
-        ...mockTranscript,
-        videoId: "v3",
-      });
-
-      const all = await storage.getAllJobTranscripts("job-123");
-      expect(all.size).toBe(2);
-      expect(all.has("v1")).toBe(true);
-      expect(all.has("v2")).toBe(true);
-      expect(all.has("v3")).toBe(false);
-    });
-
     it("clears all job data including transcripts and active id", async () => {
       await storage.saveJob(mockJob);
       await storage.setActiveJobId("job-123");

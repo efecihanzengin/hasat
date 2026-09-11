@@ -14,70 +14,8 @@ export type CollectVideosOptions = {
 };
 
 /**
- * Extracts visible videos directly from the DOM as a robust fallback.
- */
-export function extractVideosFromDom(
-  doc: Document = typeof document !== "undefined" ? document : ({} as Document)
-): VideoItem[] {
-  const items: VideoItem[] = [];
-  const seenIds = new Set<string>();
-
-  if (!doc.querySelectorAll) {
-    return items;
-  }
-
-  // Common YouTube video card link selectors
-  const links = doc.querySelectorAll('a[href*="/watch?v="]');
-  for (let i = 0; i < links.length; i++) {
-    const link = links[i] as HTMLAnchorElement;
-    const href = link.getAttribute("href") ?? "";
-    const match = href.match(/[?&]v=([^&#]+)/);
-    if (!match || !match[1]) {
-      continue;
-    }
-
-    const videoId = match[1];
-    if (seenIds.has(videoId)) {
-      continue;
-    }
-
-    // Attempt to locate title
-    let title =
-      link.getAttribute("title") ??
-      link.textContent?.trim() ??
-      "";
-
-    // If title on link is just time or empty, search container
-    if (!title || title.length < 2 || /^\d{1,2}:\d{2}$/.test(title)) {
-      const container =
-        link.closest("ytd-rich-item-renderer") ??
-        link.closest("ytd-grid-video-renderer") ??
-        link.closest("ytd-playlist-video-renderer") ??
-        link.closest("yt-lockup-view-model");
-      if (container) {
-        const titleEl =
-          container.querySelector("#video-title") ??
-          container.querySelector("h3") ??
-          container.querySelector(".yt-lockup-metadata-view-model-wiz__title");
-        if (titleEl?.textContent?.trim()) {
-          title = titleEl.textContent.trim();
-        }
-      }
-    }
-
-    seenIds.add(videoId);
-    items.push({
-      videoId,
-      title: title || `Video ${videoId}`,
-    });
-  }
-
-  return items;
-}
-
-/**
- * Collects all videos for the active YouTube channel or playlist.
- * Combines InnerTube async generator pagination with DOM fallbacks.
+ * Collects all videos for the active YouTube channel or playlist using
+ * InnerTube continuation token pagination.
  */
 export async function collectVideos(
   options?: CollectVideosOptions
@@ -86,14 +24,25 @@ export async function collectVideos(
   const signal = options?.signal;
   const onProgress = options?.onProgress;
   const fetchFn = options?.fetchFn ?? fetch;
-  const doc =
-    options?.doc ??
-    (typeof document !== "undefined" ? document : ({} as Document));
+
+  if (!context?.clientVersion) {
+    throw new Error("Missing clientVersion in YouTube page context");
+  }
 
   const allVideos: VideoItem[] = [];
   const seenIds = new Set<string>();
 
-  const browseEndpoint = context?.apiKey
+  const addPageVideos = (items: readonly VideoItem[]): void => {
+    for (const item of items) {
+      if (!seenIds.has(item.videoId)) {
+        seenIds.add(item.videoId);
+        allVideos.push(item);
+      }
+    }
+    onProgress?.(allVideos.length);
+  };
+
+  const browseEndpoint = context.apiKey
     ? `https://www.youtube.com/youtubei/v1/browse?key=${encodeURIComponent(
         context.apiKey
       )}&prettyPrint=false`
@@ -101,9 +50,9 @@ export async function collectVideos(
 
   const clientContext = {
     client: {
-      clientName: context?.clientName ?? "WEB",
-      clientVersion: context?.clientVersion ?? "2.20240313.01.00",
-      ...(context?.visitorData ? { visitorData: context.visitorData } : {}),
+      clientName: context.clientName ?? "WEB",
+      clientVersion: context.clientVersion,
+      ...(context.visitorData ? { visitorData: context.visitorData } : {}),
     },
   };
 
@@ -133,23 +82,17 @@ export async function collectVideos(
   };
 
   const initialContinuationToken =
-    context?.playlist?.continuationToken ??
-    context?.videosTab?.continuationToken;
+    context.playlist?.continuationToken ??
+    context.videosTab?.continuationToken;
 
-  const browseId = context?.videosTab?.browseId;
-  const params = context?.videosTab?.params;
+  const browseId = context.videosTab?.browseId;
+  const params = context.videosTab?.params;
 
   // Pre-seed with initial videos already present in context (e.g. playlist browse response)
   const initialBatch =
-    context?.playlist?.initialVideos ?? context?.initialVideos;
+    context.playlist?.initialVideos ?? context.initialVideos;
   if (initialBatch && initialBatch.length > 0) {
-    for (const item of initialBatch) {
-      if (!seenIds.has(item.videoId)) {
-        seenIds.add(item.videoId);
-        allVideos.push(item);
-      }
-    }
-    onProgress?.(allVideos.length);
+    addPageVideos(initialBatch);
   }
 
   try {
@@ -164,13 +107,7 @@ export async function collectVideos(
         if (signal?.aborted) {
           break;
         }
-        for (const item of page) {
-          if (!seenIds.has(item.videoId)) {
-            seenIds.add(item.videoId);
-            allVideos.push(item);
-          }
-        }
-        onProgress?.(allVideos.length);
+        addPageVideos(page);
       }
     } else if (browseId && params) {
       const fetchPage = async (request: {
@@ -216,35 +153,14 @@ export async function collectVideos(
         if (signal?.aborted) {
           break;
         }
-        for (const item of page) {
-          if (!seenIds.has(item.videoId)) {
-            seenIds.add(item.videoId);
-            allVideos.push(item);
-          }
-        }
-        onProgress?.(allVideos.length);
+        addPageVideos(page);
       }
     }
   } catch (err: unknown) {
     if (signal?.aborted) {
       return allVideos;
     }
-    console.warn(
-      "[Video Collector] Continuation enumeration encountered error; falling back to DOM parsing:",
-      err
-    );
-  }
-
-  // Fallback: If no videos discovered via browse API, scan page DOM
-  if (allVideos.length === 0 && !signal?.aborted) {
-    const domVideos = extractVideosFromDom(doc);
-    for (const item of domVideos) {
-      if (!seenIds.has(item.videoId)) {
-        seenIds.add(item.videoId);
-        allVideos.push(item);
-      }
-    }
-    onProgress?.(allVideos.length);
+    throw err;
   }
 
   return allVideos;

@@ -236,11 +236,24 @@ export function formatArchiveFileName(
       ? String(index).padStart(padWidth, "0")
       : String(index);
 
-  const cleanTitle = sanitizeTitle(title, 100);
   const cleanVideoId = stripIllegalChars(videoId).replace(/\s+/g, "");
-
   const safeVideoId = cleanVideoId.length > 0 ? cleanVideoId : "unknown";
   const safeExt = ext.length > 0 ? ext : "txt";
 
-  return `${formattedIndex}-${cleanTitle}-${safeVideoId}.${safeExt}`;
+  const prefix = `${formattedIndex}-`;
+  const suffix = `-${safeVideoId}.${safeExt}`;
+  const maxTitleLength = Math.max(1, 100 - prefix.length - suffix.length);
+
+  const cleanTitle = sanitizeTitle(title, maxTitleLength);
+  let candidate = `${prefix}${cleanTitle}${suffix}`;
+
+  if (candidate.length > 100) {
+    const extWithDot = `.${safeExt}`;
+    const maxBaseLen = Math.max(1, 100 - extWithDot.length);
+    const base = candidate.slice(0, candidate.length - extWithDot.length);
+    const truncatedBase = base.slice(0, maxBaseLen).replace(/[-.]+$/g, "");
+    candidate = `${truncatedBase}${extWithDot}`;
+  }
+
+  return candidate;
 }

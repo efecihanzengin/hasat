@@ -94,6 +94,11 @@ Enumeration uses YouTube's InnerTube `browse` endpoint.
 
 1. Call the InnerTube `player` endpoint for the videoId.
 2. Read `captions.playerCaptionsTracklistRenderer.captionTracks`.
+   - **Watch Page Fallback**: If the `player` endpoint fails with HTTP 403 or returns
+     an unplayable response mapped to `PRIVATE_OR_MEMBERS`, fetch the video watch page
+     (`https://www.youtube.com/watch?v={videoId}`) as an accepted fallback, extract
+     `ytInitialPlayerResponse` from the page HTML, and log the fallback invocation to the
+     console before proceeding to caption track selection.
 3. Track selection order:
    - User-selected preferred language (or video default if set to Auto)
    - Manually created track in the video's default language
@@ -106,7 +111,7 @@ Enumeration uses YouTube's InnerTube `browse` endpoint.
 
 ### 4.3 Concurrency and pacing
 
-- Max 3 concurrent video fetches. Configurable, hard ceiling of 5.
+- Fixed 3 concurrent video fetches (not configurable in the UI).
 - 250–500ms jittered delay between requests.
 - On HTTP 429: exponential backoff (1s, 2s, 4s, 8s), max 4 retries, then mark
   the item `failed` and continue with the rest of the job. Never abort the

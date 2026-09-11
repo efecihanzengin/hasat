@@ -4,10 +4,7 @@ import {
   detectSourceMetadata,
   parseVideoCountText,
 } from "../src/content/source-detector.js";
-import {
-  extractVideosFromDom,
-  collectVideos,
-} from "../src/content/video-collector.js";
+import { collectVideos } from "../src/content/video-collector.js";
 import {
   mountPanelUi,
   ensureMountPoint,
@@ -101,41 +98,19 @@ describe("UI Controller & Source Detection", () => {
     });
   });
 
-  describe("extractVideosFromDom & collectVideos", () => {
-    it("extracts video items from DOM anchor links", () => {
-      const anchor1 = mockDoc.createElement("a");
-      anchor1.setAttribute("href", "/watch?v=vid001");
-      anchor1.setAttribute("title", "Video One");
-      mockDoc.body.appendChild(anchor1);
+  describe("collectVideos", () => {
+    it("throws error when clientVersion is missing in YouTube context", async () => {
+      await expect(
+        collectVideos({
+          context: null,
+        })
+      ).rejects.toThrow("Missing clientVersion in YouTube page context");
 
-      const anchor2 = mockDoc.createElement("a");
-      anchor2.setAttribute("href", "/watch?v=vid002&t=10s");
-      anchor2.setAttribute("title", "Video Two");
-      mockDoc.body.appendChild(anchor2);
-
-      const items = extractVideosFromDom(mockDoc as unknown as Document);
-      expect(items).toHaveLength(2);
-      expect(items[0]).toEqual({ videoId: "vid001", title: "Video One" });
-      expect(items[1]).toEqual({ videoId: "vid002", title: "Video Two" });
-    });
-
-    it("collects videos using fallback when API continuation is not available", async () => {
-      const anchor = mockDoc.createElement("a");
-      anchor.setAttribute("href", "/watch?v=abc12345");
-      anchor.setAttribute("title", "Fallback Video");
-      mockDoc.body.appendChild(anchor);
-
-      const progressSpy = vi.fn();
-
-      const videos = await collectVideos({
-        context: null,
-        doc: mockDoc as unknown as Document,
-        onProgress: progressSpy,
-      });
-
-      expect(videos).toHaveLength(1);
-      expect(videos[0]?.videoId).toBe("abc12345");
-      expect(progressSpy).toHaveBeenCalledWith(1);
+      await expect(
+        collectVideos({
+          context: { apiKey: "AIzaTestKey" },
+        })
+      ).rejects.toThrow("Missing clientVersion in YouTube page context");
     });
 
     it("collects videos via continuation token pagination and reports progress", async () => {
@@ -167,6 +142,7 @@ describe("UI Controller & Source Detection", () => {
 
       const mockContext: YouTubeContext = {
         apiKey: "AIzaTestKey",
+        clientVersion: "2.20240313.01.00",
         playlist: {
           playlistId: "PL_TEST",
           continuationToken: "TOKEN_P1",

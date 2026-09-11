@@ -175,5 +175,48 @@ describe("filename utilities", () => {
 
       expect(result).toBe("2-untitled-unknown.srt");
     });
+
+    it("enforces 100-character total filename limit with long titles while preserving extension", () => {
+      const longTitle =
+        "This is an extraordinarily long video title designed specifically to exceed the usual boundaries of filesystem limits and test strict truncation " +
+        "repeated again and again to ensure length exceeds several hundred characters easily";
+
+      const resultTxt = formatArchiveFileName({
+        index: 42,
+        title: longTitle,
+        videoId: "jNQXAC9IVRw",
+        format: "txt",
+        padWidth: 3,
+      });
+
+      expect(resultTxt.length).toBeLessThanOrEqual(100);
+      expect(resultTxt.endsWith("-jNQXAC9IVRw.txt")).toBe(true);
+      expect(resultTxt.startsWith("042-")).toBe(true);
+
+      const resultMd = formatArchiveFileName({
+        index: 100,
+        title: longTitle,
+        videoId: "dQw4w9WgXcQ",
+        format: "markdown",
+      });
+
+      expect(resultMd.length).toBeLessThanOrEqual(100);
+      expect(resultMd.endsWith("-dQw4w9WgXcQ.md")).toBe(true);
+      expect(resultMd.startsWith("100-")).toBe(true);
+    });
+
+    it("safely truncates entire filename to 100 characters even if videoId or index is abnormally long", () => {
+      const extremeVideoId = "a".repeat(85);
+      const longTitle = "A".repeat(50);
+      const result = formatArchiveFileName({
+        index: 12345,
+        title: longTitle,
+        videoId: extremeVideoId,
+        format: "json",
+      });
+
+      expect(result.length).toBeLessThanOrEqual(100);
+      expect(result.endsWith(".json")).toBe(true);
+    });
   });
 });
