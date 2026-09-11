@@ -5,14 +5,14 @@ The background job execution engine running in the MV3 Service Worker. Manages a
 
 **Blocked by:** 05 (Pure JS Zip Packaging & Manifest Generator), 06 (Channel & Playlist Video Enumerator), 07 (Main World Context Extraction Bridge)
 
-**Status:** ready-for-agent
+**Status:** completed
 
 ## Acceptance Criteria
 
-- [ ] Service worker message & port router handling job lifecycle (`START_JOB`, `CANCEL_JOB`, `GET_JOB_STATUS`, `DOWNLOAD_EXPORT`).
-- [ ] `Liveness Port` connection listener maintaining worker wake lock throughout active extraction jobs.
-- [ ] Concurrency-throttled queue processor executing max 3 video fetches simultaneously with 250-500ms jitter delay.
-- [ ] Exponential backoff retry handler for HTTP 429 responses (1s, 2s, 4s, 8s, up to 4 retries) before marking item `RATE_LIMITED`.
-- [ ] Immediate persistence of each completed transcript in `chrome.storage.local`.
-- [ ] Cancellation handling via `AbortController` cleanly halting pending fetches while retaining partial completed items.
-- [ ] Unit tests for queue throttling, retry state machine, and storage flush logic.
+- [x] Service worker message & port router handling job lifecycle (`START_JOB`, `CANCEL_JOB`, `GET_JOB_STATUS`, `DOWNLOAD_EXPORT`).
+- [x] `Liveness Port` connection listener maintaining worker wake lock throughout active extraction jobs.
+- [x] Concurrency-throttled queue processor executing max 3 video fetches simultaneously with 250-500ms jitter delay.
+- [x] Exponential backoff retry handler for HTTP 429 responses (1s, 2s, 4s, 8s, up to 4 retries) before marking item `RATE_LIMITED`.
+- [x] Immediate persistence of each completed transcript in `chrome.storage.local`.
+- [x] Cancellation handling via `AbortController` cleanly halting pending fetches while retaining partial completed items.
+- [x] Unit tests for queue throttling, retry state machine, and storage flush logic.
