@@ -1,0 +1,862 @@
+{
+  "responseContext": {
+    "serviceTrackingParams": [
+      {
+        "service": "GFEEDBACK",
+        "params": [
+          {
+            "key": "is_alc_surface",
+            "value": "false"
+          },
+          {
+            "key": "ipcc",
+            "value": "0"
+          },
+          {
+            "key": "is_viewed_live",
+            "value": "False"
+          },
+          {
+            "key": "logged_in",
+            "value": "0"
+          },
+          {
+            "key": "visitor_data",
+            "value": "CgtKem1falJLYWVGdyiR0Y7VBjIKCgJUUhIEGgAgVWLfAgrcAjIxLllUPUJzcVZIcEViWl9PMVYtekJfZmZ0cjhXLWVjMWNJY1oxek9BVnFPNjlnS1M2dldGYUpnTWhjQ3dzdXVfbDltbkwwSHI0R3BUNzdRamZmeklNV0xVX3ViRG96cTRSUEF4TDRaRDkzOWRmSUJXTGJoc08zZGxZdHZEaEpqUEFJYXBwbmJUMXM3Vnd1cm5ud2pOdjlIT3hndWF1VHoxcUVCNTAzbGVkdjc2WWJsaEN5YXN0ZEtqRGFGdXN5bF9PdjJROEpFdTFBRVNUdW5WY0Z0QVJEUURaZVVSU3FzN0xOVkg4bWtVX0c5dHNPaUVMVVFPTmc5NmVweElzdVVEaUpPcHpqUWZZQkdlZ3Z0TE9TTUlHMTVYbE1OMWZkMXV1N0thV20zci1rSHdDZmdNb0FrcVpNV0RwUVI3dE5JTFVkVlVQTk9aaGF6NTVwYzJKbWxkNE5Hb2J5Zw%3D%3D"
+          }
+        ]
+      },
+      {
+        "service": "CSI",
+        "params": [
+          {
+            "key": "c",
+            "value": "WEB"
+          },
+          {
+            "key": "cver",
+            "value": "2.20260910.01.00"
+          },
+          {
+            "key": "yt_li",
+            "value": "0"
+          },
+          {
+            "key": "GetPlayer_rid",
+            "value": "0xc9ba317374451919"
+          }
+        ]
+      },
+      {
+        "service": "GUIDED_HELP",
+        "params": [
+          {
+            "key": "logged_in",
+            "value": "0"
+          }
+        ]
+      },
+      {
+        "service": "ECATCHER",
+        "params": [
+          {
+            "key": "client.version",
+            "value": "2.20260910"
+          },
+          {
+            "key": "client.name",
+            "value": "WEB"
+          }
+        ]
+      }
+    ],
+    "maxAgeSeconds": 0,
+    "mainAppWebResponseContext": {
+      "loggedOut": true,
+      "trackingParam": "k5_fmPxhoXZRrUKw4cn0TCIkmNzcObhcJSxAPa-cNcHIzt70XT1gco7oazRMkuMYNLBwOcCw59TLtslLKPQGSS"
+    },
+    "responseId": "IhMIj5eq1_vllgMVzsdCBR3ooR3x",
+    "webResponseContextExtensionData": {
+      "webResponseContextPreloadData": {
+        "preloadMessageNames": [
+          "miniplayerRenderer",
+          "playerStoryboardSpecRenderer",
+          "playerMicroformatRenderer",
+          "cardCollectionRenderer",
+          "cardRenderer",
+          "simpleCardTeaserRenderer",
+          "infoCardIconRenderer",
+          "mealbarPromoRenderer",
+          "buttonRenderer"
+        ]
+      },
+      "hasDecorated": true
+    }
+  },
+  "playabilityStatus": {
+    "status": "OK",
+    "playableInEmbed": true,
+    "miniplayer": {
+      "miniplayerRenderer": {
+        "playbackMode": "PLAYBACK_MODE_ALLOW"
+      }
+    },
+    "contextParams": "Q0FFU0FnZ0M="
+  },
+  "videoDetails": {
+    "videoId": "L_LUpnjgPso",
+    "title": "Fireplace Ambience – Cozy Fire for Relaxation & Background Viewing",
+    "lengthSeconds": "36085",
+    "keywords": [
+      "fireplace 10 hours",
+      "fireplaces",
+      "fireplace video hd",
+      "fireplace video",
+      "HD fireplace",
+      "fireplace burning",
+      "burning logs",
+      "fireplace"
+    ],
+    "channelId": "UCR5hpffFzzlEJoAqY2xotcg",
+    "isOwnerViewing": false,
+    "shortDescription": "Original ambient fireplace video designed for relaxation, sleep, and background viewing.\n\nThis content is carefully prepared to provide a continuous and natural visual experience, with stable lighting and consistent motion.\n\nCreated and reviewed to ensure a calm, distraction-free atmosphere similar to a real fireplace.\nThis video is intended as background ambience, not for active viewing.",
+    "isCrawlable": true,
+    "thumbnail": {
+      "thumbnails": [
+        {
+          "url": "https://i.ytimg.com/vi/L_LUpnjgPso/hqdefault.jpg?sqp=-oaymwE1CKgBEF5IVfKriqkDKAgBFQAAiEIYAXABwAEG8AEB-AH-CYAC0AWKAgwIABABGH8gFSgTMA8=&rs=AOn4CLAcQUy_Y6WolpiQkRVLt-PnzS809g",
+          "width": 168,
+          "height": 94
+        },
+        {
+          "url": "https://i.ytimg.com/vi/L_LUpnjgPso/hqdefault.jpg?sqp=-oaymwE1CMQBEG5IVfKriqkDKAgBFQAAiEIYAXABwAEG8AEB-AH-CYAC0AWKAgwIABABGH8gFSgTMA8=&rs=AOn4CLC7cYwGOj1j97mKL-lJiOv7mqyzDQ",
+          "width": 196,
+          "height": 110
+        },
+        {
+          "url": "https://i.ytimg.com/vi/L_LUpnjgPso/hqdefault.jpg?sqp=-oaymwE2CPYBEIoBSFXyq4qpAygIARUAAIhCGAFwAcABBvABAfgB_gmAAtAFigIMCAAQARh_IBUoEzAP&rs=AOn4CLBlv5YJK_E8l0zhsByor7QX4G7eJA",
+          "width": 246,
+          "height": 138
+        },
+        {
+          "url": "https://i.ytimg.com/vi/L_LUpnjgPso/hqdefault.jpg?sqp=-oaymwE2CNACELwBSFXyq4qpAygIARUAAIhCGAFwAcABBvABAfgB_gmAAtAFigIMCAAQARh_IBUoEzAP&rs=AOn4CLD4OnFA0zxVh-ik_wxCiEOkOpdqQw",
+          "width": 336,
+          "height": 188
+        },
+        {
+          "url": "https://i.ytimg.com/vi/L_LUpnjgPso/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGH8gFSgTMA8=&rs=AOn4CLDVPehYiHSLryt2_mLZ5-ownils6A",
+          "width": 1920,
+          "height": 1080
+        }
+      ]
+    },
+    "allowRatings": true,
+    "viewCount": "164903940",
+    "author": "Fireplace Atmosphere",
+    "isPrivate": false,
+    "isUnpluggedCorpus": false,
+    "isLiveContent": false,
+    "isTvfilmVideo": false
+  },
+  "playerConfig": {
+    "granularVariableSpeedConfig": {
+      "minimumPlaybackRate": 25,
+      "maximumPlaybackRate": 200,
+      "stepSize": 5,
+      "defaultPlaybackRateOptions": [
+        {
+          "label": "1.0",
+          "value": 100,
+          "isPremiumUpsell": false,
+          "priority": 5
+        },
+        {
+          "label": "1.25",
+          "value": 125,
+          "isPremiumUpsell": false,
+          "priority": 2
+        },
+        {
+          "label": "1.5",
+          "value": 150,
+          "isPremiumUpsell": false,
+          "priority": 3
+        },
+        {
+          "label": "1.75",
+          "value": 175,
+          "isPremiumUpsell": false,
+          "priority": 0
+        },
+        {
+          "label": "2.0",
+          "value": 200,
+          "isPremiumUpsell": false,
+          "priority": 4
+        },
+        {
+          "label": "3.0",
+          "value": 300,
+          "isPremiumUpsell": true,
+          "priority": 1
+        }
+      ]
+    },
+    "vssClientConfig": {
+      "vssUsePostRequest": true
+    },
+    "audioConfig": {
+      "loudnessDb": -13.799999,
+      "perceptualLoudnessDb": -27.799999,
+      "enablePerFormatLoudness": true,
+      "trackAbsoluteLoudnessLkfs": -27.799999,
+      "loudnessTargetLkfs": -14,
+      "loudnessNormalizationConfig": {
+        "applyStatefulNormalization": false,
+        "preserveStatefulLoudnessTarget": true,
+        "maxStatefulTimeThresholdSec": 300,
+        "minimumLoudnessTargetLkfs": -31
+      }
+    },
+    "streamSelectionConfig": {
+      "maxBitrate": "21880000"
+    },
+    "playerControlsConfig": {
+      "showCachedInTimebar": true
+    },
+    "daiConfig": {
+      "sendSsdaiMissingAdBreakReasons": true
+    },
+    "mediaCommonConfig": {
+      "dynamicReadaheadConfig": {
+        "maxReadAheadMediaTimeMs": 120000,
+        "minReadAheadMediaTimeMs": 15000,
+        "readAheadGrowthRateMs": 1000
+      },
+      "mediaUstreamerRequestConfig": {
+        "videoPlaybackUstreamerConfig": "Ct8ICukECAAlAACAPy0zM3M_NT0Klz9yBAoAGACgAQGoAQC4AgHaAn0QsOoBGIDd2wEgoJwBKKCcAXCIJ4AB9APgAQOYAgzQAgLoAgSAAwKIA4gnqAMDwAMByAMBgAQB0AQB2AQB-AQHgAV9wAUByAUB4AXQD_gF0A-QBgHQBgHwBgGAB9APgAgBiAgBnQjNzEw-oAjoB-AIAegI____________AfoCRagB0IYDhQKamRk_jQIAAIA_wALfA_0CzczMPZADAZ0DCtcjPdUEAAAgQbUGvTeGNb0GMzODQMgHAeUHAIAJRPAHAYAIAagDAbADA9ADAdgDAcoEHAoTCMCpBxCYdRjoByUAAAAAKAAwABDg1AMY0A_SBA8KCAiwCRCwCSABIIgnKAHaBA0KBgjwLhDwLiDwLigBmAYBqAaAgALSBhQI6AcQZBoNCIgnFQAAAD8dzcxMP9gGAbgHAaAIAdIIBggBEAEYAakJAAAAAAAA8L-xCQAAAAAAAPC_0AkB2gkkbzdyMktEQ21RbU9qT2JFR0RhSDRQNGRzQStVNlBvRDJSR2p1oAsB6gsEiwaMBoAMAagMkAHYDAHgDQHIDwHQDwGYEAHoEAGQEQGgEQHQEgHgEgGAEwGwEwHYEwDoEwGIFACRFAAAAAAAAPC_mRQAAAAAAADwv8oUEXYyMDI1MDkyMl8xMjI2LjAw2BSIJ-IUPAoAEjhDQU1TSkJVbHViYkpESlFDbkE3NUZYS2pCdUVXenRzUDZRR19BQUFBUVNvRUJNVUdud0dHQkE9PYEVAAAAAAAA8L-YFQGoFQG4FQHIFQGIp6HKCwEyDAiJARDD15asjZ-UAzIMCPgBEJWw-Kn2npQDMgwIjwMQ1cCm08GflAMyDAiIARDl1bvRj5-UAzIMCPcBEK_GkpX1npQDMgwIjgMQ9Naz9t6elAMyDAiHARDwyuj3jp-UAzIMCPQBEMuHt478npQDMgwIjQMQvPCA89SelAMyDAiGARDHu5_Ijp-UAzIMCPMBEKyXg8T4npQDMgwIjAMQgdzl8r6elAMyDAiFARD5rfm0j5-UAzIMCPIBEPSyqq__npQDMgwIiwMQqIX7ytKelAMyDAigARDTpYbGk5-UAzIMCJYCEIX12L7znpQDMgwIigMQ_vyIkLOelAMyDAiMARD9yIem-52UAzIcCIwBELma1ab-nZQDGg5DZ2dLQTJSeVl4SUJNUTIMCPkBEMyd1YW8npQDMhwI-QEQrv7-mf6dlAMaDkNnZ0tBMlJ5WXhJQk1RMgwI-gEQoJnThbyelAMyHAj6ARD-gYL__Z2UAxoOQ2dnS0EyUnlZeElCTVEyDAj7ARCimbmGvJ6UAzIcCPsBEKOKgKn-nZQDGg5DZ2dLQTJSeVl4SUJNUToAUiYaACgAMhhVQ1I1aHBmZkZ6emxFSm9BcVkyeG90Y2dAAFgAYAB4AKABAbABBboBAwQFMcIBCAECAwQFCCow0AEAgAIAEkwATTbPZDBFAiEAqZ_IECl43DYxawoCiInzjI0uH61hZqTS1DVA-81C9xACIC1aGZEJX8gWiYALnDzF2zPl3pUsZfSA73b7cO2Pi3T7GgJlaQ=="
+      },
+      "useServerDrivenAbr": true,
+      "serverPlaybackStartConfig": {
+        "enable": true,
+        "playbackStartPolicy": {
+          "startMinReadaheadPolicy": [
+            {
+              "minReadaheadMs": 1200
+            }
+          ]
+        }
+      },
+      "platypusUseEnvoyNetFetch": false,
+      "fixLivePlaybackModelDefaultPosition": false
+    },
+    "webPlayerConfig": {
+      "useCobaltTvosDash": true,
+      "webPlayerActionsPorting": {
+        "getSharePanelCommand": {
+          "clickTrackingParams": "REDACTED_TRACKING_PARAMS",
+          "commandMetadata": {
+            "webCommandMetadata": {
+              "sendPost": true,
+              "apiUrl": "/youtubei/v1/share/get_web_player_share_panel"
+            }
+          },
+          "webPlayerShareEntityServiceEndpoint": {
+            "serializedShareEntity": "CgtMX0xVcG5qZ1Bzbw%3D%3D"
+          }
+        },
+        "subscribeCommand": {
+          "clickTrackingParams": "REDACTED_TRACKING_PARAMS",
+          "commandMetadata": {
+            "webCommandMetadata": {
+              "sendPost": true,
+              "apiUrl": "/youtubei/v1/subscription/subscribe"
+            }
+          },
+          "subscribeEndpoint": {
+            "channelIds": [
+              "UCR5hpffFzzlEJoAqY2xotcg"
+            ],
+            "params": "EgIIBxgA"
+          }
+        },
+        "unsubscribeCommand": {
+          "clickTrackingParams": "REDACTED_TRACKING_PARAMS",
+          "commandMetadata": {
+            "webCommandMetadata": {
+              "sendPost": true,
+              "apiUrl": "/youtubei/v1/subscription/unsubscribe"
+            }
+          },
+          "unsubscribeEndpoint": {
+            "channelIds": [
+              "UCR5hpffFzzlEJoAqY2xotcg"
+            ],
+            "params": "CgIIBxgA"
+          }
+        },
+        "addToWatchLaterCommand": {
+          "clickTrackingParams": "REDACTED_TRACKING_PARAMS",
+          "commandMetadata": {
+            "webCommandMetadata": {
+              "sendPost": true,
+              "apiUrl": "/youtubei/v1/browse/edit_playlist"
+            }
+          },
+          "playlistEditEndpoint": {
+            "playlistId": "WL",
+            "actions": [
+              {
+                "addedVideoId": "L_LUpnjgPso",
+                "action": "ACTION_ADD_VIDEO"
+              }
+            ]
+          }
+        },
+        "removeFromWatchLaterCommand": {
+          "clickTrackingParams": "REDACTED_TRACKING_PARAMS",
+          "commandMetadata": {
+            "webCommandMetadata": {
+              "sendPost": true,
+              "apiUrl": "/youtubei/v1/browse/edit_playlist"
+            }
+          },
+          "playlistEditEndpoint": {
+            "playlistId": "WL",
+            "actions": [
+              {
+                "action": "ACTION_REMOVE_VIDEO_BY_VIDEO_ID",
+                "removedVideoId": "L_LUpnjgPso"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "storyboards": {
+    "playerStoryboardSpecRenderer": {
+      "spec": "https://i.ytimg.com/sb/L_LUpnjgPso/storyboard3_L$L/$N.jpg?sqp=-oaymwENSDfyq4qpAwVwAcABBqLzl_8DBgi0zpO2Bg==|48#27#100#10#10#0#default#rs$AOn4CLDbGmpW7WgBeGW2hcd4Fa6zrpmXew|80#45#3610#10#10#10000#M$M#rs$AOn4CLDzOcvdpeumMo4wbI7Qbpe2g5QDlQ|160#90#3610#5#5#10000#M$M#rs$AOn4CLB0Y-0sZh5jilIUF4ZBLhFsONwALQ|320#180#3610#3#3#10000#M$M#rs$AOn4CLB3qKJ-ktRtvzpgRO4nz5iMUpFN_w",
+      "recommendedLevel": 3,
+      "fineScrubbingRecommendedLevel": 2,
+      "highResolutionRecommendedLevel": 3
+    }
+  },
+  "microformat": {
+    "playerMicroformatRenderer": {
+      "thumbnail": {
+        "thumbnails": [
+          {
+            "url": "https://i.ytimg.com/vi/L_LUpnjgPso/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGH8gFSgTMA8=&rs=AOn4CLDVPehYiHSLryt2_mLZ5-ownils6A",
+            "width": 1280,
+            "height": 720
+          }
+        ]
+      },
+      "embed": {
+        "iframeUrl": "https://www.youtube.com/embed/L_LUpnjgPso",
+        "width": 1280,
+        "height": 720
+      },
+      "title": {
+        "simpleText": "Fireplace Ambience – Cozy Fire for Relaxation & Background Viewing"
+      },
+      "description": {
+        "simpleText": "Original ambient fireplace video designed for relaxation, sleep, and background viewing.\n\nThis content is carefully prepared to provide a continuous and natural visual experience, with stable lighting and consistent motion.\n\nCreated and reviewed to ensure a calm, distraction-free atmosphere similar to a real fireplace.\nThis video is intended as background ambience, not for active viewing."
+      },
+      "lengthSeconds": "36086",
+      "ownerProfileUrl": "http://www.youtube.com/@FireplaceAtmosphereTV",
+      "externalChannelId": "UCR5hpffFzzlEJoAqY2xotcg",
+      "isFamilySafe": true,
+      "availableCountries": [
+        "AD",
+        "AE",
+        "AF",
+        "AG",
+        "AI",
+        "AL",
+        "AM",
+        "AO",
+        "AQ",
+        "AR",
+        "AS",
+        "AT",
+        "AU",
+        "AW",
+        "AX",
+        "AZ",
+        "BA",
+        "BB",
+        "BD",
+        "BE",
+        "BF",
+        "BG",
+        "BH",
+        "BI",
+        "BJ",
+        "BL",
+        "BM",
+        "BN",
+        "BO",
+        "BQ",
+        "BR",
+        "BS",
+        "BT",
+        "BV",
+        "BW",
+        "BY",
+        "BZ",
+        "CA",
+        "CC",
+        "CD",
+        "CF",
+        "CG",
+        "CH",
+        "CI",
+        "CK",
+        "CL",
+        "CM",
+        "CN",
+        "CO",
+        "CR",
+        "CU",
+        "CV",
+        "CW",
+        "CX",
+        "CY",
+        "CZ",
+        "DE",
+        "DJ",
+        "DK",
+        "DM",
+        "DO",
+        "DZ",
+        "EC",
+        "EE",
+        "EG",
+        "EH",
+        "ER",
+        "ES",
+        "ET",
+        "FI",
+        "FJ",
+        "FK",
+        "FM",
+        "FO",
+        "FR",
+        "GA",
+        "GB",
+        "GD",
+        "GE",
+        "GF",
+        "GG",
+        "GH",
+        "GI",
+        "GL",
+        "GM",
+        "GN",
+        "GP",
+        "GQ",
+        "GR",
+        "GS",
+        "GT",
+        "GU",
+        "GW",
+        "GY",
+        "HK",
+        "HM",
+        "HN",
+        "HR",
+        "HT",
+        "HU",
+        "ID",
+        "IE",
+        "IL",
+        "IM",
+        "IN",
+        "IO",
+        "IQ",
+        "IR",
+        "IS",
+        "IT",
+        "JE",
+        "JM",
+        "JO",
+        "JP",
+        "KE",
+        "KG",
+        "KH",
+        "KI",
+        "KM",
+        "KN",
+        "KP",
+        "KR",
+        "KW",
+        "KY",
+        "KZ",
+        "LA",
+        "LB",
+        "LC",
+        "LI",
+        "LK",
+        "LR",
+        "LS",
+        "LT",
+        "LU",
+        "LV",
+        "LY",
+        "MA",
+        "MC",
+        "MD",
+        "ME",
+        "MF",
+        "MG",
+        "MH",
+        "MK",
+        "ML",
+        "MM",
+        "MN",
+        "MO",
+        "MP",
+        "MQ",
+        "MR",
+        "MS",
+        "MT",
+        "MU",
+        "MV",
+        "MW",
+        "MX",
+        "MY",
+        "MZ",
+        "NA",
+        "NC",
+        "NE",
+        "NF",
+        "NG",
+        "NI",
+        "NL",
+        "NO",
+        "NP",
+        "NR",
+        "NU",
+        "NZ",
+        "OM",
+        "PA",
+        "PE",
+        "PF",
+        "PG",
+        "PH",
+        "PK",
+        "PL",
+        "PM",
+        "PN",
+        "PR",
+        "PS",
+        "PT",
+        "PW",
+        "PY",
+        "QA",
+        "RE",
+        "RO",
+        "RS",
+        "RU",
+        "RW",
+        "SA",
+        "SB",
+        "SC",
+        "SD",
+        "SE",
+        "SG",
+        "SH",
+        "SI",
+        "SJ",
+        "SK",
+        "SL",
+        "SM",
+        "SN",
+        "SO",
+        "SR",
+        "SS",
+        "ST",
+        "SV",
+        "SX",
+        "SY",
+        "SZ",
+        "TC",
+        "TD",
+        "TF",
+        "TG",
+        "TH",
+        "TJ",
+        "TK",
+        "TL",
+        "TM",
+        "TN",
+        "TO",
+        "TR",
+        "TT",
+        "TV",
+        "TW",
+        "TZ",
+        "UA",
+        "UG",
+        "UM",
+        "US",
+        "UY",
+        "UZ",
+        "VA",
+        "VC",
+        "VE",
+        "VG",
+        "VI",
+        "VN",
+        "VU",
+        "WF",
+        "WS",
+        "YE",
+        "YT",
+        "ZA",
+        "ZM",
+        "ZW"
+      ],
+      "isUnlisted": false,
+      "hasYpcMetadata": false,
+      "viewCount": "164903940",
+      "category": "Entertainment",
+      "publishDate": "2016-10-02T07:05:46-07:00",
+      "ownerChannelName": "Fireplace Atmosphere",
+      "uploadDate": "2016-10-02T07:05:46-07:00",
+      "isShortsEligible": false,
+      "externalVideoId": "L_LUpnjgPso",
+      "likeCount": "411260",
+      "canonicalUrl": "https://www.youtube.com/watch?v=L_LUpnjgPso"
+    }
+  },
+  "cards": {
+    "cardCollectionRenderer": {
+      "cards": [
+        {
+          "cardRenderer": {
+            "teaser": {
+              "simpleCardTeaserRenderer": {
+                "message": {
+                  "simpleText": "View corrections"
+                },
+                "trackingParams": "REDACTED_TRACKING_PARAMS",
+                "prominent": true,
+                "logVisibilityUpdates": true,
+                "onTapCommand": {
+                  "clickTrackingParams": "REDACTED_TRACKING_PARAMS",
+                  "changeEngagementPanelVisibilityAction": {
+                    "targetId": "engagement-panel-error-corrections",
+                    "visibility": "ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"
+                  }
+                }
+              }
+            },
+            "cueRanges": [
+              {
+                "startCardActiveMs": "0",
+                "endCardActiveMs": "5000",
+                "teaserDurationMs": "6000",
+                "iconAfterTeaserMs": "5000"
+              }
+            ],
+            "trackingParams": "REDACTED_TRACKING_PARAMS"
+          }
+        }
+      ],
+      "headerText": {
+        "simpleText": "From Fireplace Atmosphere"
+      },
+      "icon": {
+        "infoCardIconRenderer": {
+          "trackingParams": "REDACTED_TRACKING_PARAMS"
+        }
+      },
+      "closeButton": {
+        "infoCardIconRenderer": {
+          "trackingParams": "REDACTED_TRACKING_PARAMS"
+        }
+      },
+      "trackingParams": "REDACTED_TRACKING_PARAMS",
+      "allowTeaserDismiss": true,
+      "logIconVisibilityUpdates": true
+    }
+  },
+  "trackingParams": "REDACTED_TRACKING_PARAMS",
+  "messages": [
+    {
+      "mealbarPromoRenderer": {
+        "icon": {
+          "thumbnails": [
+            {
+              "url": "https://www.gstatic.com/youtube/img/promos/growth/6ad5a99c727579634bc3e2fb67562a2621170bdd11578967392667be5a05c5e4_384x384.png",
+              "width": 384,
+              "height": 384
+            }
+          ]
+        },
+        "messageTexts": [
+          {
+            "runs": [
+              {
+                "text": "Get YouTube without the ads"
+              }
+            ]
+          }
+        ],
+        "actionButton": {
+          "buttonRenderer": {
+            "style": "STYLE_MONO_FILLED",
+            "size": "SIZE_DEFAULT",
+            "text": {
+              "runs": [
+                {
+                  "text": "Get 1st month for 0 TL"
+                }
+              ]
+            },
+            "trackingParams": "REDACTED_TRACKING_PARAMS",
+            "command": {
+              "clickTrackingParams": "REDACTED_TRACKING_PARAMS",
+              "commandExecutorCommand": {
+                "commands": [
+                  {
+                    "clickTrackingParams": "REDACTED_TRACKING_PARAMS",
+                    "commandMetadata": {
+                      "webCommandMetadata": {
+                        "url": "/premium?ybp=Eg9GRXdoYXRfdG9fd2F0Y2gqFGRtZWEtYWNxLWMtZWdzb1ZEVFJkOhwIBhgBKhYKFGRtZWEtYWNxLWMtZWdzb1ZEVFJk",
+                        "webPageType": "WEB_PAGE_TYPE_BROWSE",
+                        "rootVe": 93498,
+                        "apiUrl": "/youtubei/v1/browse"
+                      }
+                    },
+                    "browseEndpoint": {
+                      "browseId": "SPunlimited",
+                      "params": "kgNFEg9GRXdoYXRfdG9fd2F0Y2gqFGRtZWEtYWNxLWMtZWdzb1ZEVFJkOhwIBhgBKhYKFGRtZWEtYWNxLWMtZWdzb1ZEVFJk"
+                    }
+                  },
+                  {
+                    "commandMetadata": {
+                      "webCommandMetadata": {
+                        "sendPost": true,
+                        "apiUrl": "/youtubei/v1/feedback"
+                      }
+                    },
+                    "feedbackEndpoint": {
+                      "feedbackToken": "AB9zfpLm_n2r-1Jgdgs6liVIB8v7jASR37L33VO69g5cfGp_OKiI61c8MuNhYXdJneEYGBbYvCQzNyV6AWnWGgqrtSP9yzMBjvgKVSu5E_mV2z17smxx5rpHcqwp4IcclCOiPXFsRCqhTWXF96ieDJvKB7j-JLFB1u0-G5_gSlW_jSRmpRNbwYM",
+                      "uiActions": {
+                        "hideEnclosingContainer": true
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "dismissButton": {
+          "buttonRenderer": {
+            "style": "STYLE_MONO_TONAL",
+            "size": "SIZE_DEFAULT",
+            "text": {
+              "runs": [
+                {
+                  "text": "No thanks"
+                }
+              ]
+            },
+            "trackingParams": "REDACTED_TRACKING_PARAMS",
+            "command": {
+              "clickTrackingParams": "REDACTED_TRACKING_PARAMS",
+              "commandExecutorCommand": {
+                "commands": [
+                  {
+                    "clickTrackingParams": "REDACTED_TRACKING_PARAMS",
+                    "commandMetadata": {
+                      "webCommandMetadata": {
+                        "sendPost": true,
+                        "apiUrl": "/youtubei/v1/feedback"
+                      }
+                    },
+                    "feedbackEndpoint": {
+                      "feedbackToken": "AB9zfpLDwHA6ii_hqSRoK8-EsVsA-W8oSU-7CrdXzyCe3wiYkvroPibtOD8pNgOOWn14pnEaEnd0DdUEFxF7T7mtBeqDQibtnfLkMDcmoR957URYiP5J8JIbyRYnXIQvy1t4eo0mXSNOXuwXkhUYo9YHPsXvlH22k7C3SU_Ux8AylFp5RcSYCpw",
+                      "uiActions": {
+                        "hideEnclosingContainer": true
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "triggerCondition": "TRIGGER_CONDITION_POST_AD",
+        "style": "STYLE_MODERN",
+        "trackingParams": "REDACTED_TRACKING_PARAMS",
+        "impressionEndpoints": [
+          {
+            "clickTrackingParams": "REDACTED_TRACKING_PARAMS",
+            "commandMetadata": {
+              "webCommandMetadata": {
+                "sendPost": true,
+                "apiUrl": "/youtubei/v1/feedback"
+              }
+            },
+            "feedbackEndpoint": {
+              "feedbackToken": "AB9zfpK0nLgzxT33s9Im32zUk29jEIWfpAxNX947MHQoAZ5WzduZmQx3Jhiv8KC5PADMh5KINHWD7X7c7i5WjP83nJN1peyDUThh4fbZWkOvvpnG0pNpQLYDsGnqZnngvakGRCGdnnj-7PV4xyQYQkkEdbjvVjtNjokzfaok30nJW-gmwdBhscU",
+              "uiActions": {
+                "hideEnclosingContainer": false
+              }
+            }
+          }
+        ],
+        "isVisible": true,
+        "messageTitle": {
+          "runs": [
+            {
+              "text": "YouTube Premium"
+            }
+          ]
+        },
+        "iconDark": {
+          "thumbnails": [
+            {
+              "url": "https://www.gstatic.com/youtube/img/promos/growth/6ad5a99c727579634bc3e2fb67562a2621170bdd11578967392667be5a05c5e4_384x384.png",
+              "width": 384,
+              "height": 384
+            }
+          ]
+        },
+        "supplementalText": {
+          "runs": [
+            {
+              "text": "Terms apply. Cancel anytime"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "frameworkUpdates": {
+    "entityBatchUpdate": {
+      "mutations": [
+        {
+          "entityKey": "Eg0KC0xfTFVwbmpnUHNvIPYBKAE%3D",
+          "type": "ENTITY_MUTATION_TYPE_REPLACE",
+          "payload": {
+            "offlineabilityEntity": {
+              "key": "Eg0KC0xfTFVwbmpnUHNvIPYBKAE%3D",
+              "addToOfflineButtonState": "ADD_TO_OFFLINE_BUTTON_STATE_UNKNOWN"
+            }
+          }
+        }
+      ],
+      "timestamp": {
+        "seconds": "1789110417",
+        "nanos": 830144958
+      }
+    }
+  }
+}

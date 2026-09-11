@@ -1,0 +1,445 @@
+{
+  "wireMagic": "pb3",
+  "pens": [
+    {},
+    {
+      "fcForeColor": 15066597
+    },
+    {
+      "fcForeColor": 13421772
+    }
+  ],
+  "wsWinStyles": [
+    {},
+    {
+      "mhModeHint": 2,
+      "juJustifCode": 0,
+      "sdScrollDir": 3
+    }
+  ],
+  "wpWinPositions": [
+    {},
+    {
+      "apPoint": 6,
+      "ahHorPos": 20,
+      "avVerPos": 100,
+      "rcRows": 2,
+      "ccCols": 40
+    }
+  ],
+  "events": [
+    {
+      "tStartMs": 0,
+      "dDurationMs": 120000,
+      "id": 1,
+      "wpWinPosId": 1,
+      "wsWinStyleId": 1
+    },
+    {
+      "tStartMs": 1200,
+      "dDurationMs": 3800,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "こんにちは",
+          "acAsrConf": 255
+        },
+        {
+          "utf8": "、",
+          "tOffsetMs": 500,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": "皆さん",
+          "tOffsetMs": 800,
+          "acAsrConf": 248
+        },
+        {
+          "utf8": "！",
+          "tOffsetMs": 1400,
+          "acAsrConf": 250
+        }
+      ]
+    },
+    {
+      "tStartMs": 3200,
+      "dDurationMs": 1800,
+      "wWinId": 1,
+      "aAppend": 1,
+      "segs": [
+        {
+          "utf8": "\n"
+        }
+      ]
+    },
+    {
+      "tStartMs": 5000,
+      "dDurationMs": 4200,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "歡迎來到",
+          "acAsrConf": 252
+        },
+        {
+          "utf8": "  YouTube  ",
+          "tOffsetMs": 600,
+          "acAsrConf": 240
+        },
+        {
+          "utf8": "&amp; 探索頻道",
+          "tOffsetMs": 1500,
+          "acAsrConf": 235
+        },
+        {
+          "utf8": "&#39;測試&#39;",
+          "tOffsetMs": 2800,
+          "acAsrConf": 245
+        }
+      ]
+    },
+    {
+      "tStartMs": 8200,
+      "dDurationMs": 1000,
+      "wWinId": 1,
+      "aAppend": 1,
+      "segs": [
+        {
+          "utf8": "\n"
+        }
+      ]
+    },
+    {
+      "tStartMs": 9200,
+      "dDurationMs": 4600,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "Сьогодні",
+          "acAsrConf": 255
+        },
+        {
+          "utf8": " ми",
+          "tOffsetMs": 450,
+          "acAsrConf": 250
+        },
+        {
+          "utf8": " розглядаємо",
+          "tOffsetMs": 900,
+          "acAsrConf": 242
+        },
+        {
+          "utf8": " нові",
+          "tOffsetMs": 1800,
+          "acAsrConf": 249
+        },
+        {
+          "utf8": " технології",
+          "tOffsetMs": 2400,
+          "acAsrConf": 252
+        }
+      ]
+    },
+    {
+      "tStartMs": 12800,
+      "dDurationMs": 1000,
+      "wWinId": 1,
+      "aAppend": 1,
+      "segs": [
+        {
+          "utf8": "\n"
+        }
+      ]
+    },
+    {
+      "tStartMs": 13800,
+      "dDurationMs": 5100,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "مرحبا",
+          "acAsrConf": 255
+        },
+        {
+          "utf8": " بكم",
+          "tOffsetMs": 500,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " في",
+          "tOffsetMs": 1100,
+          "acAsrConf": 245
+        },
+        {
+          "utf8": " هذا",
+          "tOffsetMs": 1700,
+          "acAsrConf": 248
+        },
+        {
+          "utf8": " الفيديو",
+          "tOffsetMs": 2300,
+          "acAsrConf": 250
+        },
+        {
+          "utf8": " &quot;التعليمي&quot;",
+          "tOffsetMs": 3100,
+          "acAsrConf": 240
+        }
+      ]
+    },
+    {
+      "tStartMs": 2139,
+      "dDurationMs": 6211,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "really",
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " pioneers",
+          "tOffsetMs": 661,
+          "acAsrConf": 234
+        },
+        {
+          "utf8": " for",
+          "tOffsetMs": 1731,
+          "acAsrConf": 217
+        },
+        {
+          "utf8": " all",
+          "tOffsetMs": 2731,
+          "acAsrConf": 217
+        },
+        {
+          "utf8": " of",
+          "tOffsetMs": 2911,
+          "acAsrConf": 212
+        },
+        {
+          "utf8": " us",
+          "tOffsetMs": 3090,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " you",
+          "tOffsetMs": 3241,
+          "acAsrConf": 207
+        },
+        {
+          "utf8": " know",
+          "tOffsetMs": 4111,
+          "acAsrConf": 219
+        }
+      ]
+    },
+    {
+      "tStartMs": 6329,
+      "dDurationMs": 2021,
+      "wWinId": 1,
+      "aAppend": 1,
+      "segs": [
+        {
+          "utf8": "\n"
+        }
+      ]
+    },
+    {
+      "tStartMs": 6339,
+      "dDurationMs": 4741,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "they",
+          "acAsrConf": 233
+        },
+        {
+          "utf8": " have",
+          "tOffsetMs": 181,
+          "acAsrConf": 234
+        },
+        {
+          "utf8": " gone",
+          "tOffsetMs": 270,
+          "acAsrConf": 240
+        },
+        {
+          "utf8": " before",
+          "tOffsetMs": 480,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " us",
+          "tOffsetMs": 721,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " they",
+          "tOffsetMs": 931,
+          "acAsrConf": 226
+        },
+        {
+          "utf8": " have",
+          "tOffsetMs": 1290,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " cut",
+          "tOffsetMs": 1531,
+          "acAsrConf": 252
+        }
+      ]
+    },
+    {
+      "tStartMs": 8340,
+      "dDurationMs": 2740,
+      "wWinId": 1,
+      "aAppend": 1,
+      "segs": [
+        {
+          "utf8": "\n"
+        }
+      ]
+    },
+    {
+      "tStartMs": 8350,
+      "dDurationMs": 5209,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "the",
+          "acAsrConf": 248
+        },
+        {
+          "utf8": " trail",
+          "tOffsetMs": 180,
+          "acAsrConf": 240
+        },
+        {
+          "utf8": " they've",
+          "tOffsetMs": 829,
+          "acAsrConf": 65
+        },
+        {
+          "utf8": " gone",
+          "tOffsetMs": 1829,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " up",
+          "tOffsetMs": 2010,
+          "acAsrConf": 204
+        },
+        {
+          "utf8": " some",
+          "tOffsetMs": 2220,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " hard",
+          "tOffsetMs": 2490,
+          "acAsrConf": 252
+        }
+      ]
+    },
+    {
+      "tStartMs": 11070,
+      "dDurationMs": 2489,
+      "wWinId": 1,
+      "aAppend": 1,
+      "segs": [
+        {
+          "utf8": "\n"
+        }
+      ]
+    },
+    {
+      "tStartMs": 11080,
+      "dDurationMs": 5550,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "rocky",
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " roads",
+          "tOffsetMs": 300,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " they've",
+          "tOffsetMs": 719,
+          "acAsrConf": 249
+        },
+        {
+          "utf8": " fought",
+          "tOffsetMs": 1110,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " some",
+          "tOffsetMs": 1380,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " battles",
+          "tOffsetMs": 1650,
+          "acAsrConf": 252
+        }
+      ]
+    },
+    {
+      "tStartMs": 13549,
+      "dDurationMs": 3081,
+      "wWinId": 1,
+      "aAppend": 1,
+      "segs": [
+        {
+          "utf8": "\n"
+        }
+      ]
+    },
+    {
+      "tStartMs": 13559,
+      "dDurationMs": 6791,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "and",
+          "acAsrConf": 198
+        },
+        {
+          "utf8": " because",
+          "tOffsetMs": 1000,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " of",
+          "tOffsetMs": 1391,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " their",
+          "tOffsetMs": 1421,
+          "acAsrConf": 223
+        },
+        {
+          "utf8": " work",
+          "tOffsetMs": 2021,
+          "acAsrConf": 252
+        },
+        {
+          "utf8": " because",
+          "tOffsetMs": 2320,
+          "acAsrConf": 205
+        },
+        {
+          "utf8": " of",
+          "tOffsetMs": 3040,
+          "acAsrConf": 252
+        }
+      ]
+    }
+  ]
+}
