@@ -138,12 +138,12 @@ export type FormatArchiveFileNameOptions = {
 };
 
 export type BuildTranscriptArchiveParams = {
-  items: JobItem[];
+  items: readonly JobItem[];
   getTranscript: (
     videoId: string
   ) => Promise<Transcript | null | undefined> | Transcript | null | undefined;
   format?: ExportFormat;
-  formats?: ExportFormat[];
+  formats?: readonly ExportFormat[];
   formatOptions?: FormatOptions;
   channelOrPlaylist?: string;
   includeManifest?: boolean;

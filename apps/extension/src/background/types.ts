@@ -1,6 +1,6 @@
 import type {
   ExportFormat,
-  ExportManifest,
+  ExtractionError,
   FormatOptions,
   JobItem,
   VideoItem,
@@ -73,19 +73,6 @@ export type GetJobStatusMessage = {
   payload?: GetJobStatusPayload;
 };
 
-export type DownloadExportPayload = {
-  jobId?: string;
-  format?: ExportFormat;
-  formats?: ExportFormat[];
-  formatOptions?: FormatOptions;
-  channelOrPlaylist?: string;
-};
-
-export type DownloadExportMessage = {
-  type: "DOWNLOAD_EXPORT";
-  payload?: DownloadExportPayload;
-};
-
 export type PingMessage = {
   type: "PING";
 };
@@ -94,18 +81,11 @@ export type ServiceWorkerMessage =
   | StartJobMessage
   | CancelJobMessage
   | GetJobStatusMessage
-  | DownloadExportMessage
   | PingMessage;
-
-export type DownloadExportData = {
-  filename: string;
-  dataBase64: string;
-  manifest: ExportManifest;
-};
 
 export type ServiceWorkerResponse<T = unknown> =
   | { ok: true; data: T }
-  | { ok: false; error: string };
+  | { ok: false; error: ExtractionError };
 
 export type JobProgressEvent = {
   type: "JOB_PROGRESS";
@@ -184,18 +164,6 @@ export function isGetJobStatusMessage(val: unknown): val is GetJobStatusMessage 
   return true;
 }
 
-export function isDownloadExportMessage(
-  val: unknown
-): val is DownloadExportMessage {
-  if (!isRecord(val) || val.type !== "DOWNLOAD_EXPORT") {
-    return false;
-  }
-  if (val.payload !== undefined && !isRecord(val.payload)) {
-    return false;
-  }
-  return true;
-}
-
 export function isPingMessage(val: unknown): val is PingMessage {
   return isRecord(val) && val.type === "PING";
 }
@@ -207,7 +175,6 @@ export function isServiceWorkerMessage(
     isStartJobMessage(val) ||
     isCancelJobMessage(val) ||
     isGetJobStatusMessage(val) ||
-    isDownloadExportMessage(val) ||
     isPingMessage(val)
   );
 }

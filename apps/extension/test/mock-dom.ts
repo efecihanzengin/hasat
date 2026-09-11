@@ -208,6 +208,12 @@ export class MockElement extends MockNode {
   querySelectorAll(selector: string): MockElement[] {
     return querySelectorAllInternal(this, selector);
   }
+
+  click(): void {
+    const event =
+      typeof Event !== "undefined" ? new Event("click") : ({ type: "click" } as Event);
+    this.dispatchEvent(event);
+  }
 }
 
 export class MockShadowRoot extends MockNode {

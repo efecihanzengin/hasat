@@ -10,7 +10,6 @@ import {
   type JobPortEvent,
   type StartJobPayload,
 } from "../src/background/types.js";
-import { unzipSync, strFromU8 } from "@youtube-transcript/core";
 
 function createMockResponse(status: number, body: unknown): Response {
   return {
@@ -23,6 +22,7 @@ function createMockResponse(status: number, body: unknown): Response {
 describe("JobManager", () => {
   let storage: MemoryJobStorage;
   let mockFetch: ReturnType<typeof vi.fn<typeof fetch>>;
+  const defaultContext = { clientVersion: "2.20240313.01.00" };
 
   beforeEach(() => {
     storage = new MemoryJobStorage();
@@ -60,6 +60,7 @@ describe("JobManager", () => {
       format: "txt",
       channelOrPlaylist: "Test Channel",
       concurrency: 2,
+      context: defaultContext,
     };
 
     const initialJob = await manager.startJob(payload);
@@ -114,6 +115,7 @@ describe("JobManager", () => {
         { videoId: "no-caps-video", title: "No Captions Video" },
       ],
       concurrency: 1,
+      context: defaultContext,
     };
 
     mockFetch.mockImplementation(async (url: unknown, init?: RequestInit) => {
@@ -176,6 +178,7 @@ describe("JobManager", () => {
         { videoId: "v3", title: "Video 3" },
       ],
       concurrency: 1,
+      context: defaultContext,
     };
 
     const initialJob = await manager.startJob(payload);
@@ -189,93 +192,6 @@ describe("JobManager", () => {
     // Check status
     const status = await manager.getJobStatus();
     expect(status?.status).toBe("cancelled");
-
-    // Download export of partially completed items should succeed
-    const exportData = await manager.downloadExport();
-    expect(exportData.dataBase64.length).toBeGreaterThan(0);
-    expect(exportData.manifest.summary.total).toBe(3);
-  });
-
-  it("generates valid zip archive and manifest on downloadExport", async () => {
-    setupSuccessfulFetch();
-
-    const manager = new JobManager({
-      storage,
-      fetchFn: mockFetch,
-      delayFn: async () => {},
-      getJitterDelay: () => 0,
-    });
-
-    await manager.startJob({
-      videos: [{ videoId: "v1", title: "Awesome Tech Talk" }],
-      format: "markdown",
-      channelOrPlaylist: "Cool Channel",
-    });
-
-    let status = await manager.getJobStatus();
-    while (status?.status === "running") {
-      await new Promise((r) => setTimeout(r, 10));
-      status = await manager.getJobStatus();
-    }
-
-    const exportData = await manager.downloadExport();
-    expect(exportData.filename).toBe("Cool-Channel-export.zip");
-    expect(exportData.manifest.summary.exported).toBe(1);
-
-    // Decode base64 and unzip to verify content
-    const binaryStr = atob(exportData.dataBase64);
-    const bytes = new Uint8Array(binaryStr.length);
-    for (let i = 0; i < binaryStr.length; i++) {
-      bytes[i] = binaryStr.charCodeAt(i);
-    }
-
-    const unzipped = unzipSync(bytes);
-    const fileNames = Object.keys(unzipped);
-
-    expect(fileNames).toContain("manifest.json");
-    const transcriptFile = fileNames.find((f) => f.endsWith(".md"));
-    expect(transcriptFile).toBeDefined();
-
-    if (transcriptFile && unzipped[transcriptFile]) {
-      const content = strFromU8(unzipped[transcriptFile]);
-      expect(content).toContain("# Me at the zoo");
-    }
-  });
-
-  it("exports multiple formats in zip archive when formats array is specified", async () => {
-    setupSuccessfulFetch();
-
-    const manager = new JobManager({
-      storage,
-      fetchFn: mockFetch,
-      delayFn: async () => {},
-      getJitterDelay: () => 0,
-    });
-
-    await manager.startJob({
-      videos: [{ videoId: "v1", title: "Video One" }],
-      formats: ["txt", "markdown", "json"],
-      channelOrPlaylist: "My Channel",
-    });
-
-    await new Promise((r) => setTimeout(r, 60));
-
-    const exportData = await manager.downloadExport({
-      formats: ["txt", "markdown", "json"],
-    });
-
-    const binary = atob(exportData.dataBase64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    const unzipped = unzipSync(bytes);
-    const filenames = Object.keys(unzipped).sort();
-
-    expect(filenames).toContain("manifest.json");
-    expect(filenames.some((f) => f.endsWith(".txt"))).toBe(true);
-    expect(filenames.some((f) => f.endsWith(".md"))).toBe(true);
-    expect(filenames.some((f) => f.endsWith(".json"))).toBe(true);
   });
 
   it("manages Liveness Port connection and broadcasts events", async () => {
@@ -342,6 +258,7 @@ describe("JobManager", () => {
         type: "START_JOB",
         payload: {
           videos: [{ videoId: "v1", title: "Vid 1" }],
+          context: defaultContext,
         },
       },
       sender,

@@ -19,7 +19,7 @@ export type CreateManifestOptions = {
  * their final statuses, error codes, and exported filenames.
  */
 export function createManifest(
-  items: JobItem[],
+  items: readonly JobItem[],
   options?: CreateManifestOptions
 ): ExportManifest {
   let exported = 0;

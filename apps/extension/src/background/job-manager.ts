@@ -1,12 +1,7 @@
 import {
-  buildTranscriptArchive,
   createExtractionError,
-  sanitizeFilename,
-  type ExportFormat,
   type ExtractionError,
-  type FormatOptions,
   type JobItem,
-  type Transcript,
 } from "@youtube-transcript/core";
 import { fetchSingleTranscript } from "./fetcher.js";
 import { processQueue } from "./queue.js";
@@ -15,23 +10,11 @@ import { ChromeJobStorage, type JobStorage } from "./storage.js";
 import {
   YTE_LIVENESS_PORT,
   type CancelJobPayload,
-  type DownloadExportData,
-  type DownloadExportPayload,
   type GetJobStatusPayload,
   type JobPortEvent,
   type JobState,
   type StartJobPayload,
 } from "./types.js";
-
-export function uint8ArrayToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  const chunkSize = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, i + chunkSize);
-    binary += String.fromCharCode.apply(null, Array.from(chunk));
-  }
-  return btoa(binary);
-}
 
 export type JobManagerOptions = {
   storage?: JobStorage;
@@ -348,63 +331,5 @@ export class JobManager {
     }
 
     return null;
-  }
-
-  /**
-   * Generates a .zip export package on-demand reading transcripts from storage per SPEC §6.1.
-   */
-  async downloadExport(
-    payload?: DownloadExportPayload
-  ): Promise<DownloadExportData> {
-    let job = this.currentJobState;
-    if (!job && payload?.jobId) {
-      job = await this.storage.getJob(payload.jobId);
-    }
-    if (!job) {
-      const activeId = await this.storage.getActiveJobId();
-      if (activeId) {
-        job = await this.storage.getJob(activeId);
-      }
-    }
-
-    if (!job) {
-      throw createExtractionError(
-        "UNKNOWN",
-        "No job found to generate export archive"
-      );
-    }
-
-    const format: ExportFormat | undefined =
-      payload?.format ?? job.format;
-    const formats: ExportFormat[] | undefined =
-      payload?.formats ?? job.formats;
-    const formatOptions: FormatOptions | undefined =
-      payload?.formatOptions ?? job.formatOptions;
-    const channelOrPlaylist =
-      payload?.channelOrPlaylist ?? job.channelOrPlaylist ?? "transcripts";
-
-    const archiveResult = await buildTranscriptArchive({
-      items: job.items,
-      getTranscript: async (
-        videoId: string
-      ): Promise<Transcript | null> => {
-        return this.storage.getTranscript(job.id, videoId);
-      },
-      format,
-      formats,
-      formatOptions,
-      channelOrPlaylist,
-      includeManifest: true,
-    });
-
-    const dataBase64 = uint8ArrayToBase64(archiveResult.zipData);
-    const sanitizedTitle = sanitizeFilename(channelOrPlaylist);
-    const filename = `${sanitizedTitle || "youtube-transcripts"}-export.zip`;
-
-    return {
-      filename,
-      dataBase64,
-      manifest: archiveResult.manifest,
-    };
   }
 }

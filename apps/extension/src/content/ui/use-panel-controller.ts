@@ -5,12 +5,12 @@ import type {
 } from "@youtube-transcript/core";
 import {
   YTE_LIVENESS_PORT,
-  type DownloadExportData,
   type JobPortEvent,
   type JobState,
   type ServiceWorkerResponse,
 } from "../../background/types.js";
 import { requestYouTubeContext } from "../bridge.js";
+import { exportJobZip, type StorageReader } from "../exporter.js";
 import { onPanelToggle } from "../shadow-shell.js";
 import {
   detectSourceMetadata,
@@ -21,6 +21,7 @@ import type { PanelViewState } from "./types.js";
 
 export type PanelControllerOptions = {
   chromeRuntime?: typeof chrome.runtime;
+  chromeStorage?: { local: StorageReader };
   doc?: Document;
 };
 
@@ -31,6 +32,11 @@ export function usePanelController(options?: PanelControllerOptions) {
   const doc =
     options?.doc ??
     (typeof document !== "undefined" ? document : ({} as Document));
+  const storageArea =
+    options?.chromeStorage?.local ??
+    (typeof chrome !== "undefined" && chrome.storage?.local
+      ? chrome.storage.local
+      : undefined);
 
   // Configuration state
   const [selectedFormats, setSelectedFormats] = useState<ExportFormat[]>([
@@ -260,7 +266,9 @@ export function usePanelController(options?: PanelControllerOptions) {
         (response: ServiceWorkerResponse<JobState>) => {
           if (!response || !response.ok) {
             setViewState("failed");
-            setErrorMessage(response?.error ?? "Failed to start extraction job");
+            setErrorMessage(
+              response?.error?.message ?? "Failed to start extraction job"
+            );
             disconnectPort();
           } else {
             setJobState(response.data);
@@ -320,9 +328,9 @@ export function usePanelController(options?: PanelControllerOptions) {
     }
   }, [viewState, runtime, jobState?.id, disconnectPort]);
 
-  // Download export zip
+  // Download export zip directly in content script per memory constraints
   const downloadExport = useCallback(async () => {
-    if (!runtime?.sendMessage || !jobState) {
+    if (!jobState) {
       return;
     }
 
@@ -330,57 +338,29 @@ export function usePanelController(options?: PanelControllerOptions) {
     setErrorMessage(null);
 
     try {
-      runtime.sendMessage(
-        {
-          type: "DOWNLOAD_EXPORT",
-          payload: {
-            jobId: jobState.id,
-            formats: selectedFormats,
-            formatOptions: { includeTimestamps },
-            channelOrPlaylist: detectedSource.title,
-          },
-        },
-        (response: ServiceWorkerResponse<DownloadExportData>) => {
-          setIsDownloading(false);
-          if (!response || !response.ok) {
-            setErrorMessage(!response ? "No response from background worker" : response.error);
-            return;
-          }
-
-          const { filename, dataBase64 } = response.data;
-          try {
-            const byteCharacters = atob(dataBase64);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-              byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: "application/zip" });
-            const url = URL.createObjectURL(blob);
-
-            const anchor = doc.createElement("a");
-            anchor.href = url;
-            anchor.download = filename;
-            doc.body.appendChild(anchor);
-            anchor.click();
-            doc.body.removeChild(anchor);
-            URL.revokeObjectURL(url);
-          } catch (err) {
-            setErrorMessage(
-              err instanceof Error
-                ? err.message
-                : "Failed to download zip file"
-            );
-          }
-        }
-      );
-    } catch (err) {
-      setIsDownloading(false);
+      await exportJobZip({
+        job: jobState,
+        formats: selectedFormats,
+        formatOptions: { includeTimestamps },
+        channelOrPlaylist: detectedSource.title,
+        storageArea,
+        doc,
+      });
+    } catch (err: unknown) {
       setErrorMessage(
-        err instanceof Error ? err.message : "Failed to initiate download"
+        err instanceof Error ? err.message : "Failed to generate export zip"
       );
+    } finally {
+      setIsDownloading(false);
     }
-  }, [runtime, jobState, selectedFormats, includeTimestamps, detectedSource.title, doc]);
+  }, [
+    jobState,
+    selectedFormats,
+    includeTimestamps,
+    detectedSource.title,
+    storageArea,
+    doc,
+  ]);
 
   // Reset back to config
   const resetToConfig = useCallback(() => {

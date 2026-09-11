@@ -1,8 +1,11 @@
+import {
+  createExtractionError,
+  type ExtractionError,
+} from "@youtube-transcript/core";
 import { JobManager } from "./job-manager.js";
 import { ChromeJobStorage } from "./storage.js";
 import {
   isCancelJobMessage,
-  isDownloadExportMessage,
   isGetJobStatusMessage,
   isPingMessage,
   isStartJobMessage,
@@ -21,6 +24,23 @@ const storage = new ChromeJobStorage();
 export const jobManager = new JobManager({ storage });
 (globalThis as unknown as { jobManager: JobManager }).jobManager = jobManager;
 
+function toExtractionError(err: unknown, fallbackMessage: string): ExtractionError {
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    "message" in err &&
+    typeof (err as ExtractionError).code === "string" &&
+    typeof (err as ExtractionError).message === "string"
+  ) {
+    return err as ExtractionError;
+  }
+  return createExtractionError(
+    "UNKNOWN",
+    err instanceof Error ? err.message : fallbackMessage
+  );
+}
+
 export function createMessageRouter(manager: JobManager) {
   return (
     message: unknown,
@@ -32,9 +52,10 @@ export function createMessageRouter(manager: JobManager) {
         .startJob(message.payload)
         .then((job) => sendResponse({ ok: true, data: job }))
         .catch((err: unknown) => {
-          const errorMsg =
-            err instanceof Error ? err.message : "Failed to start job";
-          sendResponse({ ok: false, error: errorMsg });
+          sendResponse({
+            ok: false,
+            error: toExtractionError(err, "Failed to start job"),
+          });
         });
       return true;
     }
@@ -44,9 +65,10 @@ export function createMessageRouter(manager: JobManager) {
         .cancelJob(message.payload)
         .then((job) => sendResponse({ ok: true, data: job }))
         .catch((err: unknown) => {
-          const errorMsg =
-            err instanceof Error ? err.message : "Failed to cancel job";
-          sendResponse({ ok: false, error: errorMsg });
+          sendResponse({
+            ok: false,
+            error: toExtractionError(err, "Failed to cancel job"),
+          });
         });
       return true;
     }
@@ -56,21 +78,10 @@ export function createMessageRouter(manager: JobManager) {
         .getJobStatus(message.payload)
         .then((job) => sendResponse({ ok: true, data: job }))
         .catch((err: unknown) => {
-          const errorMsg =
-            err instanceof Error ? err.message : "Failed to get job status";
-          sendResponse({ ok: false, error: errorMsg });
-        });
-      return true;
-    }
-
-    if (isDownloadExportMessage(message)) {
-      manager
-        .downloadExport(message.payload)
-        .then((exportData) => sendResponse({ ok: true, data: exportData }))
-        .catch((err: unknown) => {
-          const errorMsg =
-            err instanceof Error ? err.message : "Failed to generate export";
-          sendResponse({ ok: false, error: errorMsg });
+          sendResponse({
+            ok: false,
+            error: toExtractionError(err, "Failed to get job status"),
+          });
         });
       return true;
     }
