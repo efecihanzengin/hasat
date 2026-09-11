@@ -7,3 +7,4 @@ node_modules
 docs/**
 pnpm-lock.yaml
 coverage
+packages/core/fixtures/**
