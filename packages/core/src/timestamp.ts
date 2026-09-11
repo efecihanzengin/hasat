@@ -39,7 +39,12 @@ export function decomposeSeconds(seconds: number): TimeComponents {
  * Hours are 2+ digits, minutes and seconds are 2 digits, milliseconds are 3 digits.
  */
 export function formatSrtTimestamp(seconds: number): string {
-  const { hours, minutes, seconds: secs, milliseconds } = decomposeSeconds(seconds);
+  const {
+    hours,
+    minutes,
+    seconds: secs,
+    milliseconds,
+  } = decomposeSeconds(seconds);
   const hh = String(hours).padStart(2, "0");
   const mm = String(minutes).padStart(2, "0");
   const ss = String(secs).padStart(2, "0");
@@ -52,7 +57,12 @@ export function formatSrtTimestamp(seconds: number): string {
  * Same timing as SRT but with dot separator for milliseconds.
  */
 export function formatVttTimestamp(seconds: number): string {
-  const { hours, minutes, seconds: secs, milliseconds } = decomposeSeconds(seconds);
+  const {
+    hours,
+    minutes,
+    seconds: secs,
+    milliseconds,
+  } = decomposeSeconds(seconds);
   const hh = String(hours).padStart(2, "0");
   const mm = String(minutes).padStart(2, "0");
   const ss = String(secs).padStart(2, "0");

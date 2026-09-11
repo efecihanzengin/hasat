@@ -6,3 +6,6 @@ export * from "./timedtext-parser.js";
 export * from "./transcript-builder.js";
 export * from "./timestamp.js";
 export * from "./formatters.js";
+export * from "./filename.js";
+export * from "./manifest.js";
+export * from "./zip.js";

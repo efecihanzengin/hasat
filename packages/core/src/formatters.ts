@@ -115,9 +115,7 @@ export function formatToTxt(
   }
 
   // Without timestamps: join segments within a paragraph with a space, paragraphs with double newlines
-  return paragraphs
-    .map((p) => p.map((seg) => seg.text).join(" "))
-    .join("\n\n");
+  return paragraphs.map((p) => p.map((seg) => seg.text).join(" ")).join("\n\n");
 }
 
 /**

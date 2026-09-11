@@ -349,9 +349,11 @@ describe("formatters", () => {
 
       // Markdown
       const md = formatToMarkdown(transcript);
-      expect(md.startsWith("# Me at the zoo\n\n- **Channel:** jawed\n- **Language:** en\n\n")).toBe(
-        true
-      );
+      expect(
+        md.startsWith(
+          "# Me at the zoo\n\n- **Channel:** jawed\n- **Language:** en\n\n"
+        )
+      ).toBe(true);
       expect(md).toContain("こんにちは、皆さん！");
     });
   });

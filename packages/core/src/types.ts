@@ -90,16 +90,65 @@ export function createJobItem(videoId: string, title: string): JobItem {
   };
 }
 
-export type ExportFormat =
-  | "txt"
-  | "json"
-  | "csv"
-  | "srt"
-  | "vtt"
-  | "markdown";
+export type ExportFormat = "txt" | "json" | "csv" | "srt" | "vtt" | "markdown";
 
 export type TxtFormatOptions = {
   includeTimestamps?: boolean;
 };
 
 export type FormatOptions = TxtFormatOptions;
+
+export type ManifestSummary = {
+  total: number;
+  exported: number;
+  skipped: number;
+  failed: number;
+};
+
+export type ManifestItem = {
+  index: number;
+  videoId: string;
+  title: string;
+  status: JobItemStatus;
+  filename?: string;
+  error?: ExtractionError;
+};
+
+export type ExportManifest = {
+  version: "1.0";
+  generatedAt: string;
+  channelOrPlaylist?: string;
+  format?: ExportFormat;
+  summary: ManifestSummary;
+  items: ManifestItem[];
+};
+
+export type ZipFileInput = {
+  filename: string;
+  content: string | Uint8Array;
+};
+
+export type FormatArchiveFileNameOptions = {
+  index: number;
+  title: string;
+  videoId: string;
+  format?: ExportFormat;
+  ext?: string;
+  padWidth?: number;
+};
+
+export type BuildTranscriptArchiveParams = {
+  items: JobItem[];
+  getTranscript: (
+    videoId: string
+  ) => Promise<Transcript | null | undefined> | Transcript | null | undefined;
+  format: ExportFormat;
+  formatOptions?: FormatOptions;
+  channelOrPlaylist?: string;
+  includeManifest?: boolean;
+};
+
+export type BuildTranscriptArchiveResult = {
+  zipData: Uint8Array;
+  manifest: ExportManifest;
+};

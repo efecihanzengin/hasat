@@ -14,5 +14,8 @@
   },
   "devDependencies": {
     "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3"
   }
 }
