@@ -1,0 +1,9 @@
+dist
+.output
+node_modules
+.agents
+.scratch
+*.md
+docs/**
+pnpm-lock.yaml
+coverage
