@@ -17,7 +17,10 @@ type GlobalWithAbortController = {
   };
 };
 
-function createAbortController(): { signal: AbortSignalLike; abort: () => void } {
+function createAbortController(): {
+  signal: AbortSignalLike;
+  abort: () => void;
+} {
   const g = globalThis as unknown as GlobalWithAbortController;
   return new g.AbortController();
 }
@@ -470,7 +473,9 @@ describe("video-enumerator", () => {
     });
 
     it("respects maxPages limit", async () => {
-      const fetchContinuationMock = vi.fn().mockResolvedValue(browseContinuation);
+      const fetchContinuationMock = vi
+        .fn()
+        .mockResolvedValue(browseContinuation);
 
       const pages: VideoItem[][] = [];
 
@@ -489,12 +494,10 @@ describe("video-enumerator", () => {
     it("stops cleanly when AbortSignal is triggered", async () => {
       const abortController = createAbortController();
 
-      const fetchContinuationMock = vi
-        .fn()
-        .mockImplementation(async () => {
-          abortController.abort();
-          return browseContinuation;
-        });
+      const fetchContinuationMock = vi.fn().mockImplementation(async () => {
+        abortController.abort();
+        return browseContinuation;
+      });
 
       const pages: VideoItem[][] = [];
 

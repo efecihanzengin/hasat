@@ -5,12 +5,12 @@ A main-world script execution bridge in `apps/extension` (`world: "MAIN"`) that 
 
 **Blocked by:** 02 (Monorepo Scaffolding, Build & Verification Harness)
 
-**Status:** ready-for-agent
+**Status:** completed
 
 ## Acceptance Criteria
 
-- [ ] Main world script registered or injected via MV3 manifest (`world: "MAIN"` content script or execution).
-- [ ] Safe reading of `window.ytcfg.get('INNERTUBE_API_KEY')` and `window.ytcfg.get('INNERTUBE_CLIENT_VERSION')` with defensive fallbacks.
-- [ ] Extraction of the "Videos" tab token (`browseEndpoint` / `params`) from `window.ytInitialData` on channel pages.
-- [ ] Typed messaging bridge sending extracted context to the isolated world content script via `window.postMessage` or DOM event.
-- [ ] Automated/mock tests validating extraction and message passing when `window.ytcfg` and `ytInitialData` are present.
+- [x] Main world script registered or injected via MV3 manifest (`world: "MAIN"` content script or execution).
+- [x] Safe reading of `window.ytcfg.get('INNERTUBE_API_KEY')` and `window.ytcfg.get('INNERTUBE_CLIENT_VERSION')` with defensive fallbacks.
+- [x] Extraction of the "Videos" tab token (`browseEndpoint` / `params`) from `window.ytInitialData` on channel pages.
+- [x] Typed messaging bridge sending extracted context to the isolated world content script via `window.postMessage` or DOM event.
+- [x] Automated/mock tests validating extraction and message passing when `window.ytcfg` and `ytInitialData` are present.

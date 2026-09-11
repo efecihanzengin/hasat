@@ -1,7 +1,4 @@
-import type {
-  EnumerateVideosOptions,
-  VideoItem,
-} from "./types.js";
+import type { EnumerateVideosOptions, VideoItem } from "./types.js";
 import { createExtractionError } from "./types.js";
 
 function isRecord(val: unknown): val is Record<string, unknown> {
@@ -77,7 +74,9 @@ export function extractTextFromTitle(rawTitle: unknown): string {
   }
   if (Array.isArray(rawTitle.runs)) {
     return rawTitle.runs
-      .filter((r): r is { text: string } => isRecord(r) && typeof r.text === "string")
+      .filter(
+        (r): r is { text: string } => isRecord(r) && typeof r.text === "string"
+      )
       .map((r) => r.text)
       .join("");
   }
@@ -90,18 +89,25 @@ export function extractTextFromTitle(rawTitle: unknown): string {
 /**
  * Extracts a video ID and title from a candidate renderer node.
  */
-function extractVideoFromNode(key: string, val: Record<string, unknown>): VideoItem | null {
+function extractVideoFromNode(
+  key: string,
+  val: Record<string, unknown>
+): VideoItem | null {
   let videoId = "";
   let title = "";
 
   if (key === "lockupViewModel") {
-    const contentType = typeof val.contentType === "string" ? val.contentType : "";
+    const contentType =
+      typeof val.contentType === "string" ? val.contentType : "";
     if (contentType === "LOCKUP_CONTENT_TYPE_VIDEO" || contentType === "") {
       if (typeof val.contentId === "string") {
         videoId = val.contentId;
       }
     }
-    if (isRecord(val.metadata) && isRecord(val.metadata.lockupMetadataViewModel)) {
+    if (
+      isRecord(val.metadata) &&
+      isRecord(val.metadata.lockupMetadataViewModel)
+    ) {
       title = extractTextFromTitle(val.metadata.lockupMetadataViewModel.title);
     } else if (isRecord(val.metadata)) {
       title = extractTextFromTitle(val.metadata);
@@ -279,7 +285,9 @@ export async function* enumerateVideos(
       return;
     }
 
-    const pageVideos = extractVideosFromBrowse(options.initialData, { maxDepth });
+    const pageVideos = extractVideosFromBrowse(options.initialData, {
+      maxDepth,
+    });
     const newVideos: VideoItem[] = [];
 
     for (const v of pageVideos) {
@@ -357,7 +365,10 @@ export async function* enumerateVideos(
     let continuationPayload: unknown;
 
     if (options.fetchContinuation) {
-      continuationPayload = await options.fetchContinuation(currentToken, signal);
+      continuationPayload = await options.fetchContinuation(
+        currentToken,
+        signal
+      );
     } else if (options.fetchPage) {
       continuationPayload = await options.fetchPage({
         continuationToken: currentToken,
@@ -374,7 +385,9 @@ export async function* enumerateVideos(
       return;
     }
 
-    const pageVideos = extractVideosFromBrowse(continuationPayload, { maxDepth });
+    const pageVideos = extractVideosFromBrowse(continuationPayload, {
+      maxDepth,
+    });
     const newVideos: VideoItem[] = [];
 
     for (const v of pageVideos) {
@@ -389,7 +402,9 @@ export async function* enumerateVideos(
       yield newVideos;
     }
 
-    const nextToken = extractContinuationToken(continuationPayload, { maxDepth });
+    const nextToken = extractContinuationToken(continuationPayload, {
+      maxDepth,
+    });
     if (!nextToken || nextToken === currentToken) {
       break;
     }

@@ -183,3 +183,29 @@ export type EnumerateVideosOptions = {
   maxPages?: number;
   signal?: AbortSignalLike;
 };
+
+export type VideosTabInfo = {
+  browseId?: string;
+  params: string;
+  url?: string;
+  title?: string;
+  selected?: boolean;
+  continuationToken?: string;
+};
+
+export type PlaylistMetadata = {
+  playlistId: string;
+  title?: string;
+  videoCount?: number;
+  author?: string;
+  continuationToken?: string;
+};
+
+export type YouTubeContext = {
+  apiKey?: string;
+  clientVersion?: string;
+  clientName?: string;
+  visitorData?: string;
+  videosTab?: VideosTabInfo;
+  playlist?: PlaylistMetadata;
+};

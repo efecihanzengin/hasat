@@ -18,6 +18,12 @@ export const manifestConfig = {
       matches: ["https://www.youtube.com/*"],
       js: ["src/content/index.ts"],
     },
+    {
+      matches: ["https://www.youtube.com/*"],
+      js: ["src/content/main-world.ts"],
+      world: "MAIN" as const,
+      run_at: "document_start" as const,
+    },
   ],
 };
 
