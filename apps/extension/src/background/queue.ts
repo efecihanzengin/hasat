@@ -20,6 +20,7 @@ export type QueueOptions<T, R> = {
   onItemStart?: (item: T) => void | Promise<void>;
   onItemComplete?: (item: T, result: R) => void | Promise<void>;
   onItemError?: (item: T, error: unknown) => void | Promise<void>;
+  shouldDelay?: (item: T, result: R) => boolean;
 };
 
 export type QueueProcessStats = {
@@ -84,9 +85,13 @@ export async function processQueue<T, R>(
         // Consumer callback errors should not crash queue worker
       }
 
+      let shouldApplyDelay = true;
       try {
         const result = await processItem(item, signal);
         processedCount += 1;
+        if (options?.shouldDelay) {
+          shouldApplyDelay = options.shouldDelay(item, result);
+        }
         try {
           await options?.onItemComplete?.(item, result);
         } catch {
@@ -105,8 +110,8 @@ export async function processQueue<T, R>(
         break;
       }
 
-      // If more work remains, apply pacing jitter delay
-      if (nextIndex < items.length) {
+      // If more work remains and delay is required, apply pacing jitter delay
+      if (shouldApplyDelay && nextIndex < items.length) {
         const jitterMs = getJitter();
         if (jitterMs > 0) {
           try {

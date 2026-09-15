@@ -28,6 +28,9 @@ export async function collectVideos(
   if (!context?.clientVersion) {
     throw new Error("Missing clientVersion in YouTube page context");
   }
+  if (!context?.apiKey) {
+    throw new Error("Missing apiKey in YouTube page context");
+  }
 
   const allVideos: VideoItem[] = [];
   const seenIds = new Set<string>();
@@ -42,11 +45,9 @@ export async function collectVideos(
     onProgress?.(allVideos.length);
   };
 
-  const browseEndpoint = context.apiKey
-    ? `https://www.youtube.com/youtubei/v1/browse?key=${encodeURIComponent(
-        context.apiKey
-      )}&prettyPrint=false`
-    : "https://www.youtube.com/youtubei/v1/browse";
+  const browseEndpoint = `https://www.youtube.com/youtubei/v1/browse?key=${encodeURIComponent(
+    context.apiKey
+  )}&prettyPrint=false`;
 
   const clientContext = {
     client: {
@@ -54,6 +55,20 @@ export async function collectVideos(
       clientVersion: context.clientVersion,
       ...(context.visitorData ? { visitorData: context.visitorData } : {}),
     },
+  };
+
+  const parseErrorResponse = async (res: Response): Promise<string> => {
+    try {
+      const errorJson = (await res.json()) as {
+        error?: { message?: string };
+      };
+      if (errorJson?.error?.message) {
+        return `: ${errorJson.error.message}`;
+      }
+    } catch {
+      // response might not be JSON
+    }
+    return "";
   };
 
   const fetchContinuation = async (
@@ -67,6 +82,7 @@ export async function collectVideos(
     const response = await fetchFn(browseEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         context: clientContext,
         continuation: token,
@@ -75,7 +91,8 @@ export async function collectVideos(
     });
 
     if (!response.ok) {
-      throw new Error(`InnerTube browse failed with status ${response.status}`);
+      const detail = await parseErrorResponse(response);
+      throw new Error(`InnerTube browse failed with status ${response.status}${detail}`);
     }
 
     return response.json();
@@ -130,13 +147,15 @@ export async function collectVideos(
         const response = await fetchFn(browseEndpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify(body),
           signal,
         });
 
         if (!response.ok) {
+          const detail = await parseErrorResponse(response);
           throw new Error(
-            `InnerTube browse failed with status ${response.status}`
+            `InnerTube browse failed with status ${response.status}${detail}`
           );
         }
 
@@ -158,6 +177,13 @@ export async function collectVideos(
     }
   } catch (err: unknown) {
     if (signal?.aborted) {
+      return allVideos;
+    }
+    if (allVideos.length > 0) {
+      console.warn(
+        `[Video Collector] Continuation fetch encountered error after collecting ${allVideos.length} videos:`,
+        err
+      );
       return allVideos;
     }
     throw err;

@@ -6,6 +6,7 @@ import { JobManager } from "./job-manager.js";
 import { ChromeJobStorage } from "./storage.js";
 import {
   isCancelJobMessage,
+  isClearActiveJobMessage,
   isGetJobStatusMessage,
   isPingMessage,
   isResumeJobMessage,
@@ -98,6 +99,19 @@ export function createMessageRouter(manager: JobManager) {
           sendResponse({
             ok: false,
             error: toExtractionError(err, "Failed to resume job"),
+          });
+        });
+      return true;
+    }
+
+    if (isClearActiveJobMessage(message)) {
+      manager
+        .clearActiveJob()
+        .then(() => sendResponse({ ok: true, data: { cleared: true } }))
+        .catch((err: unknown) => {
+          sendResponse({
+            ok: false,
+            error: toExtractionError(err, "Failed to clear active job"),
           });
         });
       return true;

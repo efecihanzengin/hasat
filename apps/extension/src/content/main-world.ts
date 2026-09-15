@@ -40,7 +40,8 @@ export type WindowLike = {
  * with robust defensive fallbacks across ytcfg, ytInitialData tracking params, and HTML scripts.
  */
 export function extractYouTubeContextFromWindow(
-  win: WindowLike
+  win: WindowLike,
+  pagePayload?: unknown
 ): YouTubeContext {
   // 1. Parse credentials from window.ytcfg
   const ytcfgCreds = parseYtcfgCredentials(win.ytcfg);
@@ -50,9 +51,11 @@ export function extractYouTubeContextFromWindow(
   const clientName = ytcfgCreds.clientName ?? "WEB";
   let visitorData = ytcfgCreds.visitorData;
 
-  // 2. Fallback to ytInitialData responseContext tracking parameters
-  if ((!clientVersion || !visitorData) && win.ytInitialData) {
-    const tracking = extractTrackingCredentials(win.ytInitialData);
+  const activePageData = pagePayload ?? win.ytInitialData;
+
+  // 2. Fallback to activePageData responseContext tracking parameters
+  if ((!clientVersion || !visitorData) && activePageData) {
+    const tracking = extractTrackingCredentials(activePageData);
     if (!clientVersion && tracking.clientVersion) {
       clientVersion = tracking.clientVersion;
     }
@@ -88,15 +91,15 @@ export function extractYouTubeContextFromWindow(
     }
   }
 
-  // 4. Extract page-level metadata from ytInitialData
-  const videosTab = win.ytInitialData
-    ? extractVideosTab(win.ytInitialData)
+  // 4. Extract page-level metadata from current page data
+  const videosTab = activePageData
+    ? extractVideosTab(activePageData)
     : null;
-  const playlist = win.ytInitialData
-    ? extractPlaylistMetadata(win.ytInitialData)
+  const playlist = activePageData
+    ? extractPlaylistMetadata(activePageData)
     : null;
-  const channel = win.ytInitialData
-    ? extractChannelMetadata(win.ytInitialData)
+  const channel = activePageData
+    ? extractChannelMetadata(activePageData)
     : null;
 
   return {
@@ -115,6 +118,8 @@ export function extractYouTubeContextFromWindow(
  * Returns a cleanup function that removes all listeners.
  */
 export function setupMainWorldBridge(win: WindowLike): () => void {
+  let lastNavigatedData: unknown = undefined;
+
   const onMessage = (event: Event): void => {
     if (!("data" in event)) {
       return;
@@ -125,7 +130,7 @@ export function setupMainWorldBridge(win: WindowLike): () => void {
       return;
     }
 
-    const context = extractYouTubeContextFromWindow(win);
+    const context = extractYouTubeContextFromWindow(win, lastNavigatedData);
     win.postMessage(
       {
         source: YTE_BRIDGE_SOURCE_MAIN,
@@ -138,8 +143,14 @@ export function setupMainWorldBridge(win: WindowLike): () => void {
     );
   };
 
-  const onNavigateFinish = (): void => {
-    const context = extractYouTubeContextFromWindow(win);
+  const onNavigateFinish = (event?: Event): void => {
+    if (event && "detail" in event) {
+      const detail = (event as { detail?: { response?: unknown } }).detail;
+      if (detail && typeof detail === "object" && "response" in detail && detail.response) {
+        lastNavigatedData = detail.response;
+      }
+    }
+    const context = extractYouTubeContextFromWindow(win, lastNavigatedData);
     win.postMessage(
       {
         source: YTE_BRIDGE_SOURCE_MAIN,

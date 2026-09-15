@@ -93,8 +93,8 @@ export const App: React.FC = () => {
         )}
       </div>
 
-      {/* Global Error Banner if present */}
-      {errorMessage && (
+      {/* Global Error Banner if present (suppressed in paused and failed views which render dedicated summary banners) */}
+      {errorMessage && viewState !== "paused" && viewState !== "failed" && (
         <div className="error-banner" data-testid="error-banner" role="alert">
           <span className="error-banner-icon">&#9888;</span>
           <span className="error-banner-text">{errorMessage}</span>
@@ -309,8 +309,9 @@ export const App: React.FC = () => {
                   className="summary-banner-title"
                   data-testid="paused-banner-title"
                 >
-                  YouTube hız sınırı — tamamlananlar kaydedildi, sonra devam
-                  edebilirsin
+                  {errorMessage ||
+                    jobState.error ||
+                    "YouTube hız sınırı — tamamlananlar kaydedildi, sonra devam edebilirsin"}
                 </h3>
                 <p
                   className="summary-banner-text"

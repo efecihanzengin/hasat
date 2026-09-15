@@ -1,15 +1,23 @@
 import {
   createExtractionError,
   type ExtractionError,
+  type ExtractionResult,
   type JobItem,
+  type Transcript,
+  type YouTubeContext,
 } from "@youtube-transcript/core";
-import { fetchSingleTranscript } from "./fetcher.js";
+import {
+  fetchSingleTranscript,
+  type FetchTranscriptOptions,
+} from "./fetcher.js";
 import { processQueue } from "./queue.js";
 import { type DelayFunction } from "./retry.js";
 import { ChromeJobStorage, type JobStorage } from "./storage.js";
 import {
+  TAB_DISCONNECTED_MESSAGE,
   YTE_LIVENESS_PORT,
   type CancelJobPayload,
+  type FetchTranscriptResponseEvent,
   type GetJobStatusPayload,
   type JobPortEvent,
   type JobState,
@@ -20,10 +28,14 @@ import {
 export const CIRCUIT_BREAKER_RATE_LIMIT_THRESHOLD = 3;
 export const CIRCUIT_BREAKER_MESSAGE =
   "YouTube hız sınırı — tamamlananlar kaydedildi, sonra devam edebilirsin";
+export { TAB_DISCONNECTED_MESSAGE };
 
 export type JobManagerOptions = {
   storage?: JobStorage;
   fetchFn?: typeof fetch;
+  fetchTranscriptFn?: (
+    options: FetchTranscriptOptions
+  ) => Promise<ExtractionResult<Transcript>>;
   delayFn?: DelayFunction;
   getJitterDelay?: () => number;
   backoffSchedule?: readonly number[];
@@ -31,7 +43,10 @@ export type JobManagerOptions = {
 
 export class JobManager {
   private storage: JobStorage;
-  private fetchFn: typeof fetch;
+  private fetchFn?: typeof fetch;
+  private fetchTranscriptFn?: (
+    options: FetchTranscriptOptions
+  ) => Promise<ExtractionResult<Transcript>>;
   private delayFn?: DelayFunction;
   private getJitterDelay?: () => number;
   private backoffSchedule?: readonly number[];
@@ -39,11 +54,21 @@ export class JobManager {
   private currentJobState: JobState | null = null;
   private currentAbortController: AbortController | null = null;
   private connectedPorts = new Set<chrome.runtime.Port>();
+  private activePort: chrome.runtime.Port | null = null;
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+  private pendingPortRequests = new Map<
+    string,
+    {
+      resolve: (res: ExtractionResult<Transcript>) => void;
+      reject: (err: unknown) => void;
+      port: chrome.runtime.Port;
+    }
+  >();
 
   constructor(options?: JobManagerOptions) {
     this.storage = options?.storage ?? new ChromeJobStorage();
-    this.fetchFn = options?.fetchFn ?? fetch;
+    this.fetchFn = options?.fetchFn;
+    this.fetchTranscriptFn = options?.fetchTranscriptFn;
     this.delayFn = options?.delayFn;
     this.getJitterDelay = options?.getJitterDelay;
     this.backoffSchedule = options?.backoffSchedule;
@@ -58,9 +83,30 @@ export class JobManager {
     }
 
     this.connectedPorts.add(port);
+    this.activePort = port;
 
     port.onDisconnect.addListener(() => {
       this.connectedPorts.delete(port);
+      const wasActivePort = this.activePort === port;
+      if (wasActivePort) {
+        this.activePort = null;
+      }
+
+      // If a job is actively running and the active content script port disconnected, pause the job first
+      if (this.currentJobState?.status === "running" && wasActivePort) {
+        void this.handlePortDisconnectWhileRunning();
+      }
+
+      // Reject any pending requests that were dispatched to this port
+      for (const [requestId, pending] of this.pendingPortRequests) {
+        if (pending.port === port) {
+          this.pendingPortRequests.delete(requestId);
+          pending.reject(
+            createExtractionError("UNKNOWN", TAB_DISCONNECTED_MESSAGE)
+          );
+        }
+      }
+
       if (this.connectedPorts.size === 0 && this.heartbeatInterval !== null) {
         clearInterval(this.heartbeatInterval);
         this.heartbeatInterval = null;
@@ -78,6 +124,17 @@ export class JobManager {
         } catch {
           // Port disconnected
         }
+      } else if (
+        typeof msg === "object" &&
+        msg !== null &&
+        (msg as { type?: string }).type === "FETCH_TRANSCRIPT_RESPONSE"
+      ) {
+        const resp = msg as FetchTranscriptResponseEvent;
+        const pending = this.pendingPortRequests.get(resp.requestId);
+        if (pending) {
+          this.pendingPortRequests.delete(resp.requestId);
+          pending.resolve(resp.result);
+        }
       }
     });
 
@@ -92,6 +149,18 @@ export class JobManager {
 
   unregisterPort(port: chrome.runtime.Port): void {
     this.connectedPorts.delete(port);
+    if (this.activePort === port) {
+      const remaining = Array.from(this.connectedPorts);
+      this.activePort = remaining.length > 0 ? (remaining[0] ?? null) : null;
+    }
+  }
+
+  getActivePort(): chrome.runtime.Port | null {
+    if (this.activePort) {
+      return this.activePort;
+    }
+    const ports = Array.from(this.connectedPorts);
+    return ports.length > 0 ? (ports[0] ?? null) : null;
   }
 
   /**
@@ -121,6 +190,129 @@ export class JobManager {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
     }
+  }
+
+  /**
+   * Handles unexpected port disconnection while a job is running (tab closed or navigated away).
+   * Pauses the job, preserves completed transcripts, resets fetching items, and records user-facing message.
+   */
+  async handlePortDisconnectWhileRunning(): Promise<void> {
+    const job = this.currentJobState;
+    if (!job || (job.status !== "running" && job.status !== "paused")) {
+      return;
+    }
+
+    console.warn(
+      `[JobManager] Content script port disconnected while job running. Pausing job: ${TAB_DISCONNECTED_MESSAGE}`
+    );
+
+    job.status = "paused";
+    job.error = TAB_DISCONNECTED_MESSAGE;
+
+    if (this.currentAbortController) {
+      this.currentAbortController.abort();
+      this.currentAbortController = null;
+    }
+
+    // Reset any items that were mid-flight back to pending so resume can retry them
+    for (const item of job.items) {
+      if (
+        item.status === "fetching" ||
+        (item.status === "failed" &&
+          item.error?.message === TAB_DISCONNECTED_MESSAGE)
+      ) {
+        if (item.status === "failed") {
+          job.summary.failed = Math.max(0, job.summary.failed - 1);
+        }
+        item.status = "pending";
+        item.error = undefined;
+      }
+    }
+
+    await this.storage.saveJob(job);
+    this.stopHeartbeat();
+    this.broadcast({
+      type: "JOB_PAUSED",
+      job,
+      message: TAB_DISCONNECTED_MESSAGE,
+    });
+  }
+
+  /**
+   * Delegates transcript extraction to the active Content Script port.
+   */
+  private async fetchTranscriptViaPort(
+    port: chrome.runtime.Port,
+    options: {
+      videoId: string;
+      fallbackTitle?: string;
+      context?: YouTubeContext;
+      preferredLanguage?: string;
+      signal?: AbortSignal;
+    }
+  ): Promise<ExtractionResult<Transcript>> {
+    if (options.signal?.aborted) {
+      return {
+        ok: false,
+        error: createExtractionError("UNKNOWN", "Operation cancelled"),
+      };
+    }
+
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+    return new Promise<ExtractionResult<Transcript>>((resolve, reject) => {
+      const cleanup = () => {
+        this.pendingPortRequests.delete(requestId);
+      };
+
+      const onAbort = () => {
+        cleanup();
+        resolve({
+          ok: false,
+          error: createExtractionError("UNKNOWN", "Operation cancelled"),
+        });
+      };
+
+      if (options.signal) {
+        options.signal.addEventListener("abort", onAbort, { once: true });
+      }
+
+      this.pendingPortRequests.set(requestId, {
+        resolve: (res) => {
+          if (options.signal) {
+            options.signal.removeEventListener("abort", onAbort);
+          }
+          cleanup();
+          resolve(res);
+        },
+        reject: (err) => {
+          if (options.signal) {
+            options.signal.removeEventListener("abort", onAbort);
+          }
+          cleanup();
+          reject(err);
+        },
+        port,
+      });
+
+      try {
+        port.postMessage({
+          type: "FETCH_TRANSCRIPT_REQUEST",
+          requestId,
+          payload: {
+            videoId: options.videoId,
+            fallbackTitle: options.fallbackTitle,
+            context: options.context,
+            preferredLanguage: options.preferredLanguage,
+          },
+        });
+      } catch {
+        cleanup();
+        reject(
+          createExtractionError("UNKNOWN", TAB_DISCONNECTED_MESSAGE)
+        );
+      }
+    });
   }
 
   /**
@@ -189,16 +381,36 @@ export class JobManager {
     let circuitBreakerTripped = false;
 
     try {
+      const itemsToProcess = job.items.filter(
+        (item) => item.status !== "done" && item.status !== "skipped"
+      );
+
+      if (itemsToProcess.length === 0) {
+        job.status = "completed";
+        job.completedAt = Date.now();
+        await this.storage.saveJob(job);
+        await this.storage.setActiveJobId(null);
+        this.broadcast({ type: "JOB_COMPLETED", job });
+        return;
+      }
+
       await processQueue(
-        job.items,
-        async (item, workerSignal) => {
-          if (workerSignal?.aborted || signal.aborted) {
-            return;
+        itemsToProcess,
+        async (
+          item,
+          workerSignal
+        ): Promise<{ fromCache?: boolean; skipped?: boolean }> => {
+          if (
+            workerSignal?.aborted ||
+            signal.aborted ||
+            job.status === "paused"
+          ) {
+            return { skipped: true };
           }
 
           // If item is already completed or skipped (e.g. on resume), do not re-process
           if (item.status === "done" || item.status === "skipped") {
-            return;
+            return { skipped: true };
           }
 
           const targetLang = payload.preferredLanguage || "auto";
@@ -228,7 +440,7 @@ export class JobManager {
               job,
               updatedItem: item,
             });
-            return;
+            return { fromCache: true };
           }
 
           item.status = "fetching";
@@ -239,19 +451,68 @@ export class JobManager {
             updatedItem: item,
           });
 
-          const result = await fetchSingleTranscript({
-            videoId: item.videoId,
-            fallbackTitle: item.title,
-            context: payload.context,
-            preferredLanguage: payload.preferredLanguage,
-            signal: workerSignal ?? signal,
-            fetchFn: this.fetchFn,
-            delayFn: this.delayFn,
-            backoffSchedule: this.backoffSchedule,
-          });
+          let result: ExtractionResult<Transcript>;
+          try {
+            const activePort = this.getActivePort();
+            if (activePort) {
+              result = await this.fetchTranscriptViaPort(activePort, {
+                videoId: item.videoId,
+                fallbackTitle: item.title,
+                context: payload.context,
+                preferredLanguage: payload.preferredLanguage,
+                signal: workerSignal ?? signal,
+              });
+            } else if (this.fetchTranscriptFn) {
+              result = await this.fetchTranscriptFn({
+                videoId: item.videoId,
+                fallbackTitle: item.title,
+                context: payload.context,
+                preferredLanguage: payload.preferredLanguage,
+                signal: workerSignal ?? signal,
+              });
+            } else if (this.fetchFn) {
+              result = await fetchSingleTranscript({
+                videoId: item.videoId,
+                fallbackTitle: item.title,
+                context: payload.context,
+                preferredLanguage: payload.preferredLanguage,
+                signal: workerSignal ?? signal,
+                fetchFn: this.fetchFn,
+                delayFn: this.delayFn,
+                backoffSchedule: this.backoffSchedule,
+              });
+            } else {
+              throw createExtractionError(
+                "UNKNOWN",
+                TAB_DISCONNECTED_MESSAGE
+              );
+            }
+          } catch (fetchErr) {
+            if (signal.aborted || this.currentJobState?.status === "paused") {
+              return { skipped: true };
+            }
+            const errMsg =
+              fetchErr instanceof Error
+                ? fetchErr.message
+                : typeof fetchErr === "object" &&
+                    fetchErr !== null &&
+                    "message" in fetchErr
+                  ? String((fetchErr as { message: unknown }).message)
+                  : "Fetch failed";
 
-          if (signal.aborted) {
-            return;
+            if (errMsg === TAB_DISCONNECTED_MESSAGE) {
+              await this.handlePortDisconnectWhileRunning();
+              return { skipped: true };
+            }
+
+            result = {
+              ok: false,
+              error: createExtractionError("UNKNOWN", errMsg),
+            };
+          }
+
+          if (signal.aborted || this.currentJobState?.status === "paused") {
+            return { skipped: true };
           }
 
           if (result.ok) {
@@ -311,14 +572,21 @@ export class JobManager {
             job,
             updatedItem: item,
           });
+          return {};
         },
         {
           concurrency: payload.concurrency,
           getJitterDelay: this.getJitterDelay,
           delayFn: this.delayFn,
           signal,
+          shouldDelay: (_item, res) => !res?.fromCache && !res?.skipped,
         }
       );
+
+      if (this.currentJobState?.status === "paused") {
+        // Paused by port disconnection handler
+        return;
+      }
 
       if (circuitBreakerTripped) {
         job.status = "paused";
@@ -332,14 +600,20 @@ export class JobManager {
       } else if (signal.aborted) {
         job.status = "cancelled";
         await this.storage.saveJob(job);
+        await this.storage.setActiveJobId(null);
         this.broadcast({ type: "JOB_CANCELLED", job });
       } else {
         job.status = "completed";
         job.completedAt = Date.now();
         await this.storage.saveJob(job);
+        await this.storage.setActiveJobId(null);
         this.broadcast({ type: "JOB_COMPLETED", job });
       }
     } catch (err) {
+      if (this.currentJobState?.status === "paused") {
+        return;
+      }
+
       if (circuitBreakerTripped) {
         job.status = "paused";
         job.error = CIRCUIT_BREAKER_MESSAGE;
@@ -352,6 +626,7 @@ export class JobManager {
       } else if (signal.aborted) {
         job.status = "cancelled";
         await this.storage.saveJob(job);
+        await this.storage.setActiveJobId(null);
         this.broadcast({ type: "JOB_CANCELLED", job });
       } else {
         const errorMsg =
@@ -359,6 +634,7 @@ export class JobManager {
         job.status = "failed";
         job.error = errorMsg;
         await this.storage.saveJob(job);
+        await this.storage.setActiveJobId(null);
         this.broadcast({ type: "JOB_FAILED", job, error: errorMsg });
       }
     } finally {
@@ -394,9 +670,18 @@ export class JobManager {
 
     job.status = "cancelled";
     await this.storage.saveJob(job);
+    await this.storage.setActiveJobId(null);
     this.broadcast({ type: "JOB_CANCELLED", job });
 
     return job;
+  }
+
+  /**
+   * Clears active job state and storage reference.
+   */
+  async clearActiveJob(): Promise<void> {
+    this.currentJobState = null;
+    await this.storage.setActiveJobId(null);
   }
 
   /**
@@ -415,6 +700,14 @@ export class JobManager {
     if (activeId) {
       const job = await this.storage.getJob(activeId);
       if (job) {
+        if (
+          job.status === "completed" ||
+          job.status === "cancelled" ||
+          job.status === "failed"
+        ) {
+          await this.storage.setActiveJobId(null);
+          return null;
+        }
         this.currentJobState = job;
         return job;
       }
@@ -424,7 +717,7 @@ export class JobManager {
   }
 
   /**
-   * Resumes a paused extraction job (e.g. after circuit breaker triggered).
+   * Resumes a paused extraction job (e.g. after circuit breaker triggered or tab disconnected).
    */
   async resumeJob(payload?: ResumeJobPayload): Promise<JobState> {
     let job = this.currentJobState;
@@ -449,9 +742,16 @@ export class JobManager {
       );
     }
 
-    // Reset rate-limited failed items back to pending so they can be re-attempted
+    // Reset rate-limited failed items, tab-disconnected items, and mid-flight fetching items back to pending
     for (const item of job.items) {
-      if (item.status === "failed" && item.error?.code === "RATE_LIMITED") {
+      if (item.status === "fetching") {
+        item.status = "pending";
+      }
+      if (
+        item.status === "failed" &&
+        (item.error?.code === "RATE_LIMITED" ||
+          item.error?.message === TAB_DISCONNECTED_MESSAGE)
+      ) {
         item.status = "pending";
         item.error = undefined;
         job.summary.failed = Math.max(0, job.summary.failed - 1);

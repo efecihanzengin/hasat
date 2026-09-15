@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ExportFormat, YouTubeContext } from "@youtube-transcript/core";
 import {
+  createExtractionError,
+  type ExportFormat,
+  type YouTubeContext,
+} from "@youtube-transcript/core";
+import { fetchSingleTranscript } from "../../background/fetcher.js";
+import {
+  TAB_DISCONNECTED_MESSAGE,
   YTE_LIVENESS_PORT,
+  type FetchTranscriptRequestEvent,
   type JobPortEvent,
   type JobState,
   type ServiceWorkerResponse,
@@ -21,6 +28,24 @@ export type PanelControllerOptions = {
   chromeStorage?: { local: StorageReader };
   doc?: Document;
 };
+
+function isContextValid(
+  runtime: typeof chrome.runtime | null | undefined
+): boolean {
+  if (!runtime) return false;
+  try {
+    if (
+      typeof chrome !== "undefined" &&
+      chrome.runtime &&
+      runtime === chrome.runtime
+    ) {
+      return typeof runtime.id === "string" && runtime.id.length > 0;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function usePanelController(options?: PanelControllerOptions) {
   const runtime =
@@ -55,6 +80,11 @@ export function usePanelController(options?: PanelControllerOptions) {
 
   const portRef = useRef<chrome.runtime.Port | null>(null);
   const enumAbortControllerRef = useRef<AbortController | null>(null);
+  const contextRef = useRef<YouTubeContext | null>(null);
+
+  useEffect(() => {
+    contextRef.current = context;
+  }, [context]);
 
   // Helper to disconnect active port
   const disconnectPort = useCallback(() => {
@@ -70,7 +100,7 @@ export function usePanelController(options?: PanelControllerOptions) {
 
   // Helper to establish Liveness Port with background service worker
   const connectLivenessPort = useCallback((): chrome.runtime.Port | null => {
-    if (!runtime?.connect) {
+    if (!isContextValid(runtime) || !runtime?.connect) {
       return null;
     }
     if (portRef.current) {
@@ -84,6 +114,46 @@ export function usePanelController(options?: PanelControllerOptions) {
       port.onMessage.addListener((msg: unknown) => {
         const event = msg as JobPortEvent;
         if (!event || typeof event !== "object") return;
+
+        if (event.type === "FETCH_TRANSCRIPT_REQUEST") {
+          const req = event as FetchTranscriptRequestEvent;
+          void (async () => {
+            try {
+              const res = await fetchSingleTranscript({
+                videoId: req.payload.videoId,
+                fallbackTitle: req.payload.fallbackTitle,
+                context: req.payload.context ?? contextRef.current ?? undefined,
+                preferredLanguage: req.payload.preferredLanguage,
+              });
+              try {
+                port.postMessage({
+                  type: "FETCH_TRANSCRIPT_RESPONSE",
+                  requestId: req.requestId,
+                  result: res,
+                });
+              } catch {
+                // Port disconnected
+              }
+            } catch (err: unknown) {
+              try {
+                port.postMessage({
+                  type: "FETCH_TRANSCRIPT_RESPONSE",
+                  requestId: req.requestId,
+                  result: {
+                    ok: false,
+                    error: createExtractionError(
+                      "UNKNOWN",
+                      err instanceof Error ? err.message : "Fetch failed"
+                    ),
+                  },
+                });
+              } catch {
+                // Port disconnected
+              }
+            }
+          })();
+          return;
+        }
 
         if (event.type === "JOB_PROGRESS") {
           setJobState(event.job);
@@ -109,11 +179,28 @@ export function usePanelController(options?: PanelControllerOptions) {
       });
 
       port.onDisconnect.addListener(() => {
+        // Read runtime.lastError to clear any unhandled port errors
+        void runtime.lastError;
         portRef.current = null;
+        setJobState((currentJob) => {
+          if (currentJob?.status === "running") {
+            setViewState("paused");
+            setErrorMessage(TAB_DISCONNECTED_MESSAGE);
+            return {
+              ...currentJob,
+              status: "paused",
+              error: TAB_DISCONNECTED_MESSAGE,
+            };
+          }
+          return currentJob;
+        });
       });
 
       return port;
     } catch (err) {
+      if (err instanceof Error && err.message.includes("Extension context invalidated")) {
+        return null;
+      }
       console.warn("[Panel Controller] Failed to connect liveness port:", err);
       return null;
     }
@@ -122,16 +209,19 @@ export function usePanelController(options?: PanelControllerOptions) {
   // Synchronizes state with Service Worker and refreshes detected page source
   const syncWithServiceWorker = useCallback(async () => {
     // 1. Fetch main-world context
+    let currentSource: DetectedSource;
     try {
       const ctx = await requestYouTubeContext({ timeoutMs: 1500 });
       setContext(ctx);
-      setDetectedSource(detectSourceMetadata(ctx, doc));
+      currentSource = detectSourceMetadata(ctx, doc);
+      setDetectedSource(currentSource);
     } catch {
-      setDetectedSource(detectSourceMetadata(null, doc));
+      currentSource = detectSourceMetadata(null, doc);
+      setDetectedSource(currentSource);
     }
 
     // 2. Query active job status
-    if (!runtime?.sendMessage) {
+    if (!isContextValid(runtime) || !runtime?.sendMessage) {
       return;
     }
 
@@ -139,19 +229,50 @@ export function usePanelController(options?: PanelControllerOptions) {
       runtime.sendMessage(
         { type: "GET_JOB_STATUS" },
         (response: ServiceWorkerResponse<JobState | null>) => {
+          // Read runtime.lastError to avoid "Unchecked runtime.lastError" in extensions panel
+          const lastError = runtime.lastError;
+          if (lastError) {
+            return;
+          }
+
           if (!response || !response.ok || !response.data) {
             return;
           }
 
           const existingJob = response.data;
+
+          // If the job belongs to a different channel/playlist and is not actively running/paused,
+          // do not restore it on this new page.
+          if (
+            existingJob.channelOrPlaylist &&
+            currentSource.title &&
+            existingJob.channelOrPlaylist !== currentSource.title &&
+            existingJob.status !== "running" &&
+            existingJob.status !== "paused"
+          ) {
+            if (isContextValid(runtime) && runtime.sendMessage) {
+              try {
+                runtime.sendMessage({ type: "CLEAR_ACTIVE_JOB" }, () => {
+                  void runtime.lastError;
+                });
+              } catch {
+                // context invalidated
+              }
+            }
+            return;
+          }
+
           setJobState(existingJob);
 
           if (existingJob.status === "running") {
+            setErrorMessage(null);
             setViewState("running");
             connectLivenessPort();
           } else if (existingJob.status === "completed") {
+            setErrorMessage(null);
             setViewState("completed");
           } else if (existingJob.status === "cancelled") {
+            setErrorMessage(null);
             setViewState("cancelled");
           } else if (existingJob.status === "paused") {
             setViewState("paused");
@@ -163,6 +284,9 @@ export function usePanelController(options?: PanelControllerOptions) {
         }
       );
     } catch (err) {
+      if (err instanceof Error && err.message.includes("Extension context invalidated")) {
+        return;
+      }
       console.warn("[Panel Controller] Failed to get job status:", err);
     }
   }, [runtime, doc, connectLivenessPort]);
@@ -250,7 +374,7 @@ export function usePanelController(options?: PanelControllerOptions) {
       // Transition to running state and start background job
       setViewState("running");
 
-      if (!runtime?.sendMessage) {
+      if (!isContextValid(runtime) || !runtime?.sendMessage) {
         throw new Error("Chrome runtime unavailable");
       }
 
@@ -269,6 +393,14 @@ export function usePanelController(options?: PanelControllerOptions) {
           },
         },
         (response: ServiceWorkerResponse<JobState>) => {
+          const lastError = runtime.lastError;
+          if (lastError) {
+            setViewState("failed");
+            setErrorMessage(lastError.message ?? "Extension context invalidated");
+            disconnectPort();
+            return;
+          }
+
           if (!response || !response.ok) {
             setViewState("failed");
             setErrorMessage(
@@ -316,20 +448,25 @@ export function usePanelController(options?: PanelControllerOptions) {
       return;
     }
 
-    if (runtime?.sendMessage) {
-      runtime.sendMessage(
-        {
-          type: "CANCEL_JOB",
-          payload: { jobId: jobState?.id },
-        },
-        (response: ServiceWorkerResponse<JobState>) => {
-          if (response?.ok && response.data) {
-            setJobState(response.data);
+    if (isContextValid(runtime) && runtime?.sendMessage) {
+      try {
+        runtime.sendMessage(
+          {
+            type: "CANCEL_JOB",
+            payload: { jobId: jobState?.id },
+          },
+          (response: ServiceWorkerResponse<JobState>) => {
+            void runtime.lastError;
+            if (response?.ok && response.data) {
+              setJobState(response.data);
+            }
+            setViewState("cancelled");
+            disconnectPort();
           }
-          setViewState("cancelled");
-          disconnectPort();
-        }
-      );
+        );
+      } catch {
+        // context invalidated
+      }
     }
   }, [viewState, runtime, jobState?.id, disconnectPort]);
 
@@ -373,7 +510,16 @@ export function usePanelController(options?: PanelControllerOptions) {
     setJobState(null);
     setErrorMessage(null);
     disconnectPort();
-  }, [disconnectPort]);
+    if (isContextValid(runtime) && runtime?.sendMessage) {
+      try {
+        runtime.sendMessage({ type: "CLEAR_ACTIVE_JOB" }, () => {
+          void runtime.lastError;
+        });
+      } catch {
+        // runtime unavailable
+      }
+    }
+  }, [disconnectPort, runtime]);
 
   // Resume paused extraction
   const resumeExtraction = useCallback(async () => {
@@ -385,29 +531,47 @@ export function usePanelController(options?: PanelControllerOptions) {
     setViewState("running");
     connectLivenessPort();
 
-    if (!runtime?.sendMessage) {
+    if (!isContextValid(runtime) || !runtime?.sendMessage) {
       setViewState("failed");
       setErrorMessage("Chrome runtime unavailable");
       return;
     }
 
-    runtime.sendMessage(
-      {
-        type: "RESUME_JOB",
-        payload: { jobId: jobState.id },
-      },
-      (response: ServiceWorkerResponse<JobState>) => {
-        if (!response || !response.ok) {
-          setViewState("failed");
-          setErrorMessage(
-            response?.error?.message ?? "Failed to resume extraction job"
-          );
-          disconnectPort();
-        } else {
-          setJobState(response.data);
+    try {
+      runtime.sendMessage(
+        {
+          type: "RESUME_JOB",
+          payload: { jobId: jobState.id },
+        },
+        (response: ServiceWorkerResponse<JobState>) => {
+          const lastError = runtime.lastError;
+          if (lastError) {
+            setViewState("failed");
+            setErrorMessage(lastError.message ?? "Extension context invalidated");
+            disconnectPort();
+            return;
+          }
+
+          if (!response || !response.ok) {
+            setViewState("failed");
+            setErrorMessage(
+              response?.error?.message ?? "Failed to resume extraction job"
+            );
+            disconnectPort();
+          } else {
+            setJobState(response.data);
+          }
         }
+      );
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("Extension context invalidated")) {
+        setViewState("failed");
+        setErrorMessage("Extension context invalidated");
+        disconnectPort();
+        return;
       }
-    );
+      throw err;
+    }
   }, [jobState, runtime, connectLivenessPort, disconnectPort]);
 
   return {

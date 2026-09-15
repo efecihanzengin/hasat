@@ -1,13 +1,17 @@
 import type {
   ExportFormat,
   ExtractionError,
+  ExtractionResult,
   FormatOptions,
   JobItem,
+  Transcript,
   VideoItem,
   YouTubeContext,
 } from "@youtube-transcript/core";
 
 export const YTE_LIVENESS_PORT = "yte-liveness-port" as const;
+export const TAB_DISCONNECTED_MESSAGE =
+  "YouTube sekmesi kapandı, iş duraklatıldı" as const;
 
 export type JobStatus =
   "idle" | "running" | "completed" | "cancelled" | "failed" | "paused";
@@ -84,11 +88,16 @@ export type PingMessage = {
   type: "PING";
 };
 
+export type ClearActiveJobMessage = {
+  type: "CLEAR_ACTIVE_JOB";
+};
+
 export type ServiceWorkerMessage =
   | StartJobMessage
   | CancelJobMessage
   | GetJobStatusMessage
   | ResumeJobMessage
+  | ClearActiveJobMessage
   | PingMessage;
 
 export type ServiceWorkerResponse<T = unknown> =
@@ -126,13 +135,32 @@ export type PongEvent = {
   type: "PONG";
 };
 
+export type FetchTranscriptRequestEvent = {
+  type: "FETCH_TRANSCRIPT_REQUEST";
+  requestId: string;
+  payload: {
+    videoId: string;
+    fallbackTitle?: string;
+    context?: YouTubeContext;
+    preferredLanguage?: string;
+  };
+};
+
+export type FetchTranscriptResponseEvent = {
+  type: "FETCH_TRANSCRIPT_RESPONSE";
+  requestId: string;
+  result: ExtractionResult<Transcript>;
+};
+
 export type JobPortEvent =
   | JobProgressEvent
   | JobCompletedEvent
   | JobCancelledEvent
   | JobFailedEvent
   | JobPausedEvent
-  | PongEvent;
+  | PongEvent
+  | FetchTranscriptRequestEvent
+  | FetchTranscriptResponseEvent;
 
 function isRecord(val: unknown): val is Record<string, unknown> {
   return typeof val === "object" && val !== null && !Array.isArray(val);
@@ -194,6 +222,12 @@ export function isPingMessage(val: unknown): val is PingMessage {
   return isRecord(val) && val.type === "PING";
 }
 
+export function isClearActiveJobMessage(
+  val: unknown
+): val is ClearActiveJobMessage {
+  return isRecord(val) && val.type === "CLEAR_ACTIVE_JOB";
+}
+
 export function isServiceWorkerMessage(
   val: unknown
 ): val is ServiceWorkerMessage {
@@ -202,6 +236,7 @@ export function isServiceWorkerMessage(
     isCancelJobMessage(val) ||
     isGetJobStatusMessage(val) ||
     isResumeJobMessage(val) ||
+    isClearActiveJobMessage(val) ||
     isPingMessage(val)
   );
 }

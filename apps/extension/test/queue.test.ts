@@ -171,6 +171,36 @@ describe("queue", () => {
       expect(errors.length).toBe(1);
     });
 
+    it("respects shouldDelay callback to bypass jitter delay for non-network or cached items", async () => {
+      const delays: number[] = [];
+      const mockDelay = vi.fn(async (ms: number) => {
+        delays.push(ms);
+      });
+
+      const items = [
+        { id: 1, cached: true },
+        { id: 2, cached: false },
+        { id: 3, cached: true },
+        { id: 4, cached: false },
+      ];
+
+      await processQueue(
+        items,
+        async (item) => item,
+        {
+          concurrency: 1,
+          getJitterDelay: () => 1500,
+          delayFn: mockDelay,
+          shouldDelay: (_item, result) => !result.cached,
+        }
+      );
+
+      // Only items 2 and 4 were not cached; item 2 triggers delay before 3.
+      // Item 4 is the last item, so no delay after it.
+      expect(delays.length).toBe(1);
+      expect(delays[0]).toBe(1500);
+    });
+
     it("handles empty items array gracefully", async () => {
       const stats = await processQueue([], async () => {});
       expect(stats.total).toBe(0);
