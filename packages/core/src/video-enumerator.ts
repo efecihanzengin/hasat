@@ -136,20 +136,25 @@ function extractVideoFromNode(
   return null;
 }
 
+export type ExtractVideosOptions = {
+  maxDepth?: number;
+  allowedKeys?: Set<string>;
+};
+
 /**
  * Defensively extracts video items from a browse page or continuation response
  * by traversing the object tree for known renderers.
  */
 export function extractVideosFromBrowse(
   payload: unknown,
-  options?: { maxDepth?: number }
+  options?: ExtractVideosOptions
 ): VideoItem[] {
   if (!isRecord(payload)) {
     return [];
   }
 
   const maxDepth = options?.maxDepth ?? 25;
-  const rendererKeys = new Set([
+  const defaultRendererKeys = new Set([
     "videoRenderer",
     "playlistVideoRenderer",
     "playlistPanelVideoRenderer",
@@ -157,6 +162,7 @@ export function extractVideosFromBrowse(
     "compactVideoRenderer",
     "lockupViewModel",
   ]);
+  const rendererKeys = options?.allowedKeys ?? defaultRendererKeys;
 
   const candidateNodes = findNodesWithKeys(
     payload,
@@ -206,7 +212,10 @@ export function extractContinuationToken(
       typeof val.continuationEndpoint.continuationCommand.token === "string" &&
       val.continuationEndpoint.continuationCommand.token.length > 0
     ) {
-      return val.continuationEndpoint.continuationCommand.token;
+      const req = val.continuationEndpoint.continuationCommand.request;
+      if (typeof req !== "string" || req === "CONTINUATION_REQUEST_TYPE_BROWSE") {
+        return val.continuationEndpoint.continuationCommand.token;
+      }
     }
 
     if (
@@ -214,7 +223,10 @@ export function extractContinuationToken(
       typeof val.continuationCommand.token === "string" &&
       val.continuationCommand.token.length > 0
     ) {
-      return val.continuationCommand.token;
+      const req = val.continuationCommand.request;
+      if (typeof req !== "string" || req === "CONTINUATION_REQUEST_TYPE_BROWSE") {
+        return val.continuationCommand.token;
+      }
     }
 
     if (
@@ -235,6 +247,10 @@ export function extractContinuationToken(
 
   for (const { val } of commands) {
     if (isRecord(val.command) && isRecord(val.command.showReloadUiCommand)) {
+      continue;
+    }
+    const req = val.request;
+    if (typeof req === "string" && req !== "CONTINUATION_REQUEST_TYPE_BROWSE") {
       continue;
     }
     if (typeof val.token === "string" && val.token.length > 0) {

@@ -237,6 +237,70 @@ describe("extractPlaylistMetadata", () => {
     });
   });
 
+  it("extracts ONLY playlist videos from a watch page that contains recommended videos", () => {
+    const mockWatchPayloadWithRecommendations = {
+      contents: {
+        twoColumnWatchNextResults: {
+          secondaryResults: {
+            secondaryResults: {
+              results: [
+                {
+                  compactVideoRenderer: {
+                    videoId: "rec_vid_1",
+                    title: { simpleText: "Recommended Video 1" },
+                  },
+                },
+                {
+                  lockupViewModel: {
+                    contentType: "LOCKUP_CONTENT_TYPE_VIDEO",
+                    contentId: "rec_vid_2",
+                    metadata: {
+                      lockupMetadataViewModel: {
+                        title: { content: "Recommended Video 2" },
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          playlist: {
+            playlist: {
+              title: "Kubernetes Homelab",
+              playlistId: "PL_KUBE_123",
+              totalVideos: 2,
+              ownerName: { simpleText: "Mischa" },
+              contents: [
+                {
+                  playlistPanelVideoRenderer: {
+                    videoId: "pl_vid_1",
+                    title: { simpleText: "First Homelab Video" },
+                  },
+                },
+                {
+                  playlistPanelVideoRenderer: {
+                    videoId: "pl_vid_2",
+                    title: { simpleText: "Second Homelab Video" },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+    };
+
+    const result = extractPlaylistMetadata(mockWatchPayloadWithRecommendations);
+    expect(result).not.toBeNull();
+    expect(result?.playlistId).toBe("PL_KUBE_123");
+    expect(result?.initialVideos).toHaveLength(2);
+    expect(result?.initialVideos?.[0]?.videoId).toBe("pl_vid_1");
+    expect(result?.initialVideos?.[1]?.videoId).toBe("pl_vid_2");
+    expect(
+      result?.initialVideos?.some((v) => v.videoId.startsWith("rec_"))
+    ).toBe(false);
+  });
+
   it("returns null for invalid payload", () => {
     expect(extractPlaylistMetadata(null)).toBeNull();
     expect(extractPlaylistMetadata({})).toBeNull();

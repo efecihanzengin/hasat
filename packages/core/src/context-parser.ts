@@ -296,8 +296,74 @@ export function extractPlaylistMetadata(
   }
 
   // 2. Check for continuation token & initial videos
-  const continuationToken = extractContinuationToken(payload, { maxDepth });
-  const initialVideos = extractVideosFromBrowse(payload, { maxDepth });
+  // Locate the specific playlist video container to scope continuation and video search strictly
+  // to the video list, avoiding comments, recommendation panels, or guide drawers
+  const playlistContainers = findNodesWithKeys(
+    payload,
+    (k, val) =>
+      k === "playlistVideoListRenderer" ||
+      k === "playlistPanelRenderer" ||
+      k === "playlistPanelVideoListRenderer" ||
+      (typeof val.playlistId === "string" && Array.isArray(val.contents)) ||
+      (Array.isArray(val.contents) &&
+        val.contents.some(
+          (item) =>
+            isRecord(item) &&
+            ("playlistVideoRenderer" in item ||
+              "playlistPanelVideoRenderer" in item)
+        )),
+    maxDepth
+  );
+
+  const playlistRendererKeys = new Set([
+    "playlistVideoRenderer",
+    "playlistPanelVideoRenderer",
+    "videoRenderer",
+  ]);
+
+  let initialVideos = [];
+  let continuationToken: string | undefined;
+
+  if (playlistContainers.length > 0) {
+    for (const { val } of playlistContainers) {
+      const containerVideos = extractVideosFromBrowse(val, {
+        maxDepth,
+        allowedKeys: playlistRendererKeys,
+      });
+      if (containerVideos.length > 0) {
+        initialVideos.push(...containerVideos);
+      }
+      const token = extractContinuationToken(val, { maxDepth });
+      if (token && !continuationToken) {
+        continuationToken = token;
+      }
+    }
+  } else {
+    // Fallback if no container found (e.g. some new layout)
+    // Strictly restrict to playlist renderers to prevent recommended videos
+    // (compactVideoRenderer / lockupViewModel) from bleeding into playlist jobs
+    initialVideos = extractVideosFromBrowse(payload, {
+      maxDepth,
+      allowedKeys: playlistRendererKeys,
+    });
+    continuationToken = extractContinuationToken(payload, { maxDepth });
+  }
+
+  // Deduplicate initial videos by videoId in case multiple containers yield duplicates
+  const seenIds = new Set<string>();
+  initialVideos = initialVideos.filter((v) => {
+    if (seenIds.has(v.videoId)) return false;
+    seenIds.add(v.videoId);
+    return true;
+  });
+
+  // If videoCount is known and all videos are already loaded in initialVideos, no continuation needed
+  if (
+    videoCount !== undefined &&
+    initialVideos.length >= videoCount
+  ) {
+    continuationToken = undefined;
+  }
 
   if (playlistId) {
     return {
