@@ -104,20 +104,27 @@ Enumeration uses YouTube's InnerTube `browse` endpoint.
    - Manually created track in the video's default language
    - Auto-generated track in the preferred/default language
    - First available caption track
-4. Fetch the track `baseUrl` with `&fmt=json3` appended. Parse `events[]` into
+4. Fetch the track `baseUrl` with `&fmt=json3` appended using `credentials: "include"`. Parse `events[]` into
    `Segment[]`. Drop events with no `segs`. Concatenate `segs[].utf8`.
+   - **XML Fallback**: If the `fmt=json3` timedtext request returns an empty body (0 bytes) or fails to parse,
+     log the reason to the console and fall back to fetching the caption track in XML format (omitting `fmt=json3`),
+     parsing `<text>` or `<p>` timedtext nodes into `Segment[]`.
 5. Normalize: unescape HTML entities, collapse runs of whitespace, trim,
    drop segments that are empty after normalization.
 
 ### 4.3 Concurrency and pacing
 
 - Fixed 1 concurrent video fetch by default (not configurable in the UI).
-- 1000–2000ms jittered delay between requests.
+- 1000–2000ms jittered delay between requests (1000ms base jitter per video).
 - On HTTP 429: exponential backoff (1s, 2s, 4s, 8s), max 4 retries, then mark
   the item `failed` and continue with the rest of the job.
 - Job-level circuit breaker: If 3 consecutive videos fail with `RATE_LIMITED`,
   pause the job completely and show "YouTube hız sınırı — tamamlananlar kaydedildi, sonra devam edebilirsin"
   in the panel. Do not continue sending requests for remaining videos.
+- Content Script Port Disconnect: If the active Content Script port disconnects
+  (user closes the tab or navigates away from youtube.com), catch `chrome.runtime.Port`
+  `onDisconnect`, pause the job, preserve completed transcripts in storage, and display
+  "YouTube sekmesi kapandı, iş duraklatıldı" in the panel.
 
 ---
 
